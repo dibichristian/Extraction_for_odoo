@@ -3,3 +3,6 @@ __pycache__
 *.xlsx
 *.pyc
 *.txt
+
+!res_partner.xlsx
+!product_template.xlsx

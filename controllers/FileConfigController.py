@@ -256,14 +256,14 @@ class FileConfigController:
                     "file": file,
                     "comparaison": [
                         {
-                            "file": os.path.join(path, "client.xlsx"),
+                            "file": os.path.join(path, "res_partner.xlsx"),
                             "colonne1": "ref",
                             "colonne2": partner,
                             "colonne3": "id",
                             "resultat": partner
                         },
                         {
-                            "file": os.path.join(path, "produit.xlsx"),
+                            "file": os.path.join(path, "product_template.xlsx"),
                             "colonne1": "default_code",
                             "colonne2": "Produit",
                             "colonne3": "display_name",

@@ -16,3 +16,5 @@ tests/
 tmp/
 
 !requirements.txt
+!res_partner.xlsx
+!product_template.xlsx
