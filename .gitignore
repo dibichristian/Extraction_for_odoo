@@ -4,5 +4,6 @@ __pycache__
 *.pyc
 *.txt
 
+!requirements.txt
 !res_partner.xlsx
 !product_template.xlsx
