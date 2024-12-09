@@ -1,0 +1,94 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}
+
+    {% print(page) %}
+
+{% endblock %} 
+
+{% block name_page1 %}
+
+    {% print(page) %}
+
+{% endblock %}
+
+{% block name_page2 %}
+
+    {% print(page) %}
+
+{% endblock %}
+
+{% block content %}
+
+        <div class="row">
+            <div class="col-lg-12 col-ml-12">
+                <div class="row">
+                    <!-- Textual inputs start -->
+                    <div class="col-12 mt-5">
+                        <div class="card">
+                            <div class="card-body">
+                                <h4 class="header-title">{% print(page) %} Odoo</h4>
+                                {%if erreur %}
+                                <span style="color: #E83E3C;margin-left: 325px;font-weight: 600;">{% print(erreur) %}</span>
+                                {% endif %}
+                                {%if not check %}
+                                <form action="{{ url_for('main.check_form') }}" enctype="multipart/form-data" method="Post">
+                                    <!-- Étape 1 -->
+                                    <div id="etape1">
+                                        <div class="form-group">
+                                            <label class="col-form-label">Extraction</label>
+                                            <select class="custom-select" name="extract" id="extract">
+                                                <option value="">Choisissez le mouvement correspondante</option>
+                                                <option value="Fni">Fournisseur</option>
+                                                <option value="Clt">Client</option>
+                                            </select>
+                                        </div>
+                                        <div class="input-group mb-3">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">Fichier extraction</span>
+                                            </div>
+                                            <div class="custom-file">
+                                                <input type="file" class="custom-file-input" id="inputGroupFile01" name="file" accept=".xlsx,.csv">
+                                                <label class="custom-file-label" for="inputGroupFile01">Choisir le fichier...</label>
+                                            </div>
+                                        </div>
+                                        <input type="submit" value="Analyser" class="btn btn-outline-primary">
+                                    </div>
+                                </form>
+                                 {% else %}
+                                <form action="{{ url_for('main.form') }}" enctype="multipart/form-data" method="post">
+                                    <!-- Champ masqué contenant le chemin du fichier déjà uploadé -->
+                                    {% if file %}
+                                    <input type="hidden" name="uploaded_file" value="{{ file }}">
+                                    <input type="hidden" name="extract" value="{{ extract }}">
+                                    {% endif %}
+                                    {% for result in odoo_check['Column'] %}
+                                    <!-- Sélection du type d'extraction -->
+                                    <div class="form-group">
+                                            <label class="col-form-label">{% print(result) %}</label>
+                                        <select class="custom-select" name="{% print(result) %}" id="{% print(result) %}" required>
+                                            <option value="">Choisissez la colonne correspondante</option>
+                                        {% for checks in check %}
+                                            <option value="{% print(checks) %}">{% print(checks) %}</option>
+                                        {% endfor %}
+                                        </select>
+                                    </div>
+                                    {% endfor %}
+                                        <input type="submit" value="Envoie" class="btn btn-outline-success col-12">
+                                    </div>
+                                    {% if erreur %}
+                                    <div class="alert alert-danger mt-3">{{ erreur }}</div>
+                                    {% endif %}
+                                </form>
+
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Textual inputs end -->
+                </div>
+            </div>
+        </div>
+
+
+{% endblock %}

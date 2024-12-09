@@ -1,0 +1,17 @@
+<div class="sidebar-menu" >
+  <div class="sidebar-header" >
+      <div class="logo">
+          <a href="{{url_for('main.home') }}"><img src="{{ url_for('static', filename='assets/images/icon/logo.png')}}" alt="logo"></a>
+      </div>
+  </div>
+  <div class="main-menu">
+      <div class="menu-inner">
+          <nav>
+              <ul class="metismenu" id="menu">
+                  <li {% if page=='Nouvel import' %} class="active" {% endif %}><a href="{{ url_for('main.form') }}"><i class="fa fa-gears"></i> <span>Nouveau ficher d'import</span></a></li>
+                  <li {% if page=='Fichies d\'import' %} class="active" {% endif %}><a href="{{url_for('main.browse_directory') }}"><i class="fa fa-upload"></i> <span>Fichies d'import</span></a></li>
+              </ul>
+          </nav>
+      </div>
+  </div>
+</div>

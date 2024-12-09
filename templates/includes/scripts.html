@@ -1,0 +1,157 @@
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById("customRadio5").addEventListener("change", function () {
+            document.getElementById("domain-container").style.display = "block";
+        });
+        document.getElementById("customRadio4").addEventListener("change", function () {
+            document.getElementById("domain-container").style.display = "none";
+        });
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const line = document.getElementById('line');
+        const champ_entete = document.getElementById('champ-entete');
+
+        function toggleDomainField() {
+            // Vérifie que la valeur existe et est un nombre valide avant la comparaison
+            if (line.value && parseFloat(line.value) > 5000) {
+                champ_entete.style.display = 'block';
+            } else {
+                champ_entete.style.display = 'none';
+            }
+        }
+
+        // Attacher l'événement change
+        line.addEventListener('input', toggleDomainField);
+
+        // Initialiser l'affichage en fonction de la valeur actuelle
+        toggleDomainField();
+    });
+</script>
+
+{% if page =='Fichies d\'import' %}
+<script>
+    // Variables globales
+    let rows = []; // Toutes les lignes du tableau
+    let currentPage = 1; // Page courante
+    let perPage = 10; // Nombre de lignes par page
+    let filteredRows = []; // Lignes filtrées (initialement toutes les lignes)
+
+    document.addEventListener("DOMContentLoaded", () => {
+        // Charger toutes les lignes (directement depuis le DOM)
+        rows = Array.from(document.querySelectorAll("#files-body tr"));
+        filteredRows = [...rows]; // Initialement, toutes les lignes sont affichées
+
+        // Ajouter des gestionnaires d'événements
+        document.getElementById("search-bar").addEventListener("input", filterTable);
+        document.getElementById("items-per-page").addEventListener("change", changeItemsPerPage);
+
+        // Initialiser l'affichage
+        displayTable();
+    });
+
+    // Afficher le tableau pour la page courante
+    function displayTable() {
+        const start = (currentPage - 1) * perPage;
+        const end = start + perPage;
+
+        // Masquer toutes les lignes
+        rows.forEach(row => row.style.display = "none");
+
+        // Afficher uniquement les lignes filtrées correspondant à la page courante
+        filteredRows.slice(start, end).forEach(row => row.style.display = "");
+
+        // Mettre à jour la pagination
+        updatePagination();
+    }
+
+    // Mettre à jour les boutons de pagination
+    function updatePagination() {
+        const totalPages = Math.ceil(filteredRows.length / perPage);
+        const pagination = document.getElementById("pagination");
+        pagination.innerHTML = "";
+
+        for (let i = 1; i <= totalPages; i++) {
+            const pageItem = `
+                <li class="page-item ${i === currentPage ? "active" : ""}">
+                    <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+                </li>
+            `;
+            pagination.innerHTML += pageItem;
+        }
+    }
+
+    // Changer de page
+    function changePage(page) {
+        currentPage = page;
+        displayTable();
+    }
+
+    // Modifier le nombre de lignes par page
+    function changeItemsPerPage() {
+        perPage = parseInt(document.getElementById("items-per-page").value);
+        currentPage = 1; // Réinitialiser à la première page
+        displayTable();
+    }
+
+    // Filtrer les lignes en fonction de la recherche
+    function filterTable() {
+        const query = document.getElementById("search-bar").value.toLowerCase();
+
+        // Filtrer les lignes visibles
+        filteredRows = rows.filter(row => {
+            const cells = Array.from(row.children);
+            return cells.some(cell => cell.textContent.toLowerCase().includes(query));
+        });
+
+        currentPage = 1; // Réinitialiser à la première page
+        displayTable(); // Réafficher les résultats
+    }
+
+</script>
+<script>
+    let currentSort = { key: null, order: 'asc' }; // Clé actuelle et ordre ('asc' ou 'desc')
+
+    // Fonction pour trier les lignes
+    function sortTable(columnIndex) {
+        const rowsArray = Array.from(filteredRows); // Convertir les lignes filtrées en tableau
+        const isNumericColumn = rowsArray.some(row => !isNaN(row.children[columnIndex].innerText.trim()));
+
+        // Déterminer l'ordre du tri
+        if (currentSort.key === columnIndex) {
+            currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSort = { key: columnIndex, order: 'asc' };
+        }
+
+        // Trier les lignes
+        rowsArray.sort((a, b) => {
+            const aText = a.children[columnIndex].innerText.trim();
+            const bText = b.children[columnIndex].innerText.trim();
+
+            const aValue = isNumericColumn ? parseFloat(aText) || 0 : aText.toLowerCase();
+            const bValue = isNumericColumn ? parseFloat(bText) || 0 : bText.toLowerCase();
+
+            if (aValue < bValue) return currentSort.order === 'asc' ? -1 : 1;
+            if (aValue > bValue) return currentSort.order === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        filteredRows = rowsArray; // Mettre à jour les lignes filtrées
+        currentPage = 1; // Réinitialiser à la première page
+        displayTable(); // Réafficher les résultats
+    }
+
+    // Initialisation du tri
+    document.addEventListener("DOMContentLoaded", () => {
+        // Ajout des gestionnaires d'événements pour le tri
+        document.querySelectorAll("thead th").forEach((th, index) => {
+            th.addEventListener("click", () => sortTable(index));
+        });
+
+        displayTable(); // Afficher les données au chargement
+    });
+
+</script>
+{% endif %}

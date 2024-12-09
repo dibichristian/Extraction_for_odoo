@@ -1,0 +1,220 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Profile Settings {% endblock %} 
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+
+
+  <div class="yoo-height-b30 yoo-height-lg-b30"></div>
+  <div>
+              {% if page_type == 'Traitement' %}
+                  <div class="yoo-height-b30 yoo-height-lg-b30"></div>
+                  <div class="container-fluid"> 
+                    <div class="row">
+                      <div class="col-lg-12">
+                        <div class="yoo-card yoo-style1">
+                          <div class="yoo-fade-tabs yoo-tabs yoo-style3">
+                            <form method="post" enctype="multipart/form-data" action="{{ url_for('main.upload_file') }}">
+                              <div class="yoo-profile-setting-container">
+                                    <div class="yoo-height-b45 yoo-height-lg-b45"></div>
+                                    <div class="yoo-profile-setting-heading">
+                                      <h2 class="yoo-profile-setting-title">Import de Donnees</h2>
+                                      <div class="yoo-profile-setting-subtitle">Add all your details and fill-up correctly. You can change settings later, too.</div>
+                                      {% if Erreur != "" %}
+                                      <div class="yoo-alert yoo-danger">{% print(Erreur) %}</div>
+                                      {% endif %}
+                                    </div>
+                                    <div class="yoo-height-b15 yoo-height-lg-b15"></div>
+                                    <div class="yoo-height-b25 yoo-height-lg-b25"></div>
+                                    <div class="yoo-form-field-wrap yoo-style1">
+                                      <label class="yoo-form-field-label">Titre du projet</label>
+                                      <div class="yoo-form-field yoo-color1 yoo-with-left-text">
+                                        <span class="yoo-form-field-left-text"><i class="material-icons">title</i></span>
+                                        <input type="text" name="Titre" id="Titre" placeholder="Entre le nom de votre projet" value="Sivop">
+                                      </div>
+                                    </div>
+                                    <div class="yoo-height-b25 yoo-height-lg-b25"></div>
+                                    <div class="yoo-form-field-wrap yoo-style1">
+                                      <label class="yoo-form-field-label">Fichier Config.xlsx</label>
+                                      <div class="yoo-form-field yoo-color1">
+                                        <input type="file" name="Config" id="Config" accept=".xlsx" required>
+                                      </div>
+                                    </div>
+                                    <div class="yoo-height-b25 yoo-height-lg-b25"></div>
+                                    <div class="yoo-form-field-wrap yoo-style1">
+                                      <label class="yoo-form-field-label">Fichier des Entete</label>
+                                      <div class="yoo-form-field yoo-color1">
+                                        <input type="file" name="Entete" id="Entete" accept=".xlsx,.csv">
+                                      </div>
+                                    </div>
+                                    <div class="yoo-height-b25 yoo-height-lg-b25"></div>
+                                    <div class="yoo-form-field-wrap yoo-style1">
+                                      <label class="yoo-form-field-label">Fichier de Details</label>
+                                      <div class="yoo-form-field yoo-color1">
+                                        <input type="file" name="Detail" id="Detail" accept=".xlsx,.csv" required>
+                                        <div class="yoo-form-field-note">Email will not be publicly displayed. </div>
+                                      </div>
+                                    </div>
+                                    <div class="yoo-height-b25 yoo-height-lg-b25"></div>
+                                    <div class="yoo-form-field-wrap yoo-style1">
+                                      <label class="yoo-form-field-label">Fichiers Supplémentaire</label>
+                                      <div class="yoo-form-field yoo-color1">
+                                        <input type="file" name="Supp" id="Supp" accept=".xlsx"  multiple>
+                                        <div class="yoo-form-field-note">Email will not be publicly displayed. </div>
+                                      </div>
+                                    </div>
+                                  </div><!-- .yoo-profile-setting-container -->
+                                  <hr>
+                                  <div class="yoo-height-b20 yoo-height-lg-b20"></div>
+                                  <div class="yoo-profile-btn-group yoo-style1">
+                                    <div class="col-lg-5"><a href="{{ url_for('main.browse_directory') }}" class="btn btn-outline-warning btn-lg btn-pill">Parcourir les projets</a></div>
+                                    <div class="col-lg-7"><button class="btn btn-outline-primary btn-lg btn-pill">Enregirtre</button></div>
+                                    
+                                  </div>
+                                  <div class="yoo-height-b20 yoo-height-lg-b20"></div>
+                            </form>
+                          </div><!-- .yoo-tabs -->
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+              {% endif %}
+              {% if page_type == "browse" %}
+                  <div class="yoo-content yoo-style1">
+                    <div class="container">
+                      <div class="yoo-height-b100 yoo-height-lg-b60"></div>
+                      <div class="yoo-doc-wrap">
+                        <div class="yoo-doc-right">
+                          <div class="yoo-doc-body">  
+                            <div class="yoo-doc-header" id="doc1">
+                              <h1 class="yoo-doc-title">Explorateur d'Import</h1>
+                            </div>
+                            <div class="yoo-doc-paragraph">
+                              <div class="yoo-height-b55 yoo-height-lg-b40"></div>
+                              {% if directories %}
+                              <h2 id="ref">Projet (s)</h2>
+                              <div class="yoo-height-b10 yoo-height-lg-b10"></div>
+                              <p>Vous trouverez ici tous les fichiers prêts pour l'importation dans Odoo.</p>
+                              <p style="color: brown;">NB: Traitement_{Non du projet}</p>
+                              <div class="yoo-height-b10 yoo-height-lg-b10"></div>
+                              <div class="yoo-card yoo-style1">
+                                <div class="yoo-card-body">
+                            <div class="yoo-table yoo-style1 yoo-type1 yoo-equal-width-50 table-responsive">
+                              <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Nom du dossier</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for directory in directories %}
+                                    <tr>
+                                        <td>{{ directory }}</td>
+                                        <td>
+                                            <!-- <a href="{{ url_for('main.browse_directory', path=current_path + '/' + directory) }}" class="btn btn-primary">Ouvrir</a> -->
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            {% endif %}
+                    
+                            <!-- Afficher les fichiers import_ -->
+                            {% if files %}
+                            <h3>Fichiers d'import</h3>
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Nom du fichier</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for file in files %}
+                                    <tr>
+                                        <td>{{ file }}</td>
+                                        <td>
+                                            <a href="{{ url_for('main.download_file', filepath=current_path + '/' + file) }}" class="btn btn-success">Télécharger</a>
+                                            <!-- Ajouter d'autres actions ici -->
+                                            <a href="#" class="btn btn-warning">Autre action</a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            <p style="color: rgb(71, 165, 42);"><strong>Import_{Non du mouvement}</strong></p>
+                            <p>C'est le fichier pret a importer dans odoo</p>
+                            <p style="color: rgb(71, 165, 42);"><strong>Traitement</strong></p>
+                            <p>Ce fichier est utilisé pour extraire le fichier d'import. Il peut être utilisé pour un rattrapage en cas d'erreur dans le fichier d'import.</p>
+                            {% endif %}
+                          </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+              {% endif %}
+              {% if page_type == "404" %}
+                  <div class="yoo-height-b30 yoo-height-lg-b30"></div>
+                  <div class="yoo-height-b30 yoo-height-lg-b30"></div>
+                  <div class="container" style="display: flex; flex: auto;">
+                    <div class="col-lg-7">
+                      <div class="yoo-vertical-middle">
+                        <div class="yoo-vertical-middle-in">
+                          <div class="yoo-signup-img yoo-style1">
+                            <img src="/static/assets/img/signup/01.png" alt="">
+                          </div>
+                        </div>
+                      </div>
+                    </div><!-- .col -->
+                    <div class="col-lg-5">
+                      <div class="yoo-vertical-middle">
+                        <div class="yoo-vertical-middle-in">
+                          
+                            <h2 class="yoo-form-title">
+                              Error 404
+                            </h2>
+                            <div class="yoo-form-subtitle">
+                                  Page not found
+                            </div>
+              
+                            <div class="yoo-height-b15 yoo-height-lg-b15"></div>
+                            <div class="yoo-form-separator"> &nbsp; &nbsp; </div>
+                            <div class="yoo-height-b15 yoo-height-lg-b15"></div>
+              
+                            <div class="row">
+                              <div class="col-lg-12">
+                                <a href="/"  class="yoo-form-btn yoo-style1 yoo-color1">
+                                  <span>Home</span>
+                                </a>
+                                
+                                <br />
+                                <div>
+                                  &copy; <a target="_blank" rel="noopener noreferrer" 
+                                            href="https://yookits.com/">YooKits</a> 
+                                  - coded by <a target="_blank" rel="noopener noreferrer" href="https://appseed.us">AppSeed</a>. 
+                                </div>
+                  
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+              {% endif %}
+
+    <!-- {% include 'includes/footer.html' %} -->
+
+  </div>
+  
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}
