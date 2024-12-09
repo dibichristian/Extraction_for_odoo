@@ -1,0 +1,16 @@
+__pycache__/
+*.csv
+*.xlsx
+*.pyc
+*.txt
+*.pyo
+.env
+.git
+
+# Ignorer les dossiers Git
+.git
+.gitignore
+
+# Ignorer les données de test et fichiers temporaires
+tests/
+tmp/
