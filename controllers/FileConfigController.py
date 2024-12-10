@@ -8,11 +8,11 @@ file_manager = FileManagerController()
 
 class FileConfigController:
     
-    def generate_unique_filename(self, base_path, extension=None):
+    def generate_unique_filename(self, base_path, extension=None, extract=None):
         """Génère un nom de fichier unique pour éviter les conflits."""
         if extension != None :
             timestamp = datetime.now().strftime('%d_%m_%Y_%H%M%S')
-            name = f"{base_path}_{timestamp}.{extension}"
+            name = f"{base_path}_{extract}_{timestamp}.{extension}"
         else :
             timestamp = datetime.now().strftime('%d_%m_%Y')
             name = f"{base_path}_{timestamp}"
@@ -30,17 +30,22 @@ class FileConfigController:
     def order_columns(self, df, column_order):
         """
         Réorganise les colonnes d'un DataFrame selon un ordre spécifié
-        et supprime celles qui ne sont pas dans la liste `column_order`.
-
+        et modifie la colonne "Date" en ajoutant un "-" après chaque 2 caractères.
+        
         :param df: Le DataFrame à modifier.
         :param column_order: La liste des colonnes dans l'ordre souhaité.
         :return: Un DataFrame avec les colonnes réorganisées.
         """
+        # Ajouter un "-" après chaque 2 caractères dans la colonne "Date", si elle existe
+        if "Date" in df.columns:
+            df["Date"] = df["Date"].astype(str).apply(lambda x: '-'.join([x[i:i+2] for i in range(0, len(x), 2)]))
+
         # Garder uniquement les colonnes spécifiées dans column_order
         new_order = [col for col in column_order if col in df.columns]
         
         # Retourner le DataFrame avec les colonnes dans le nouvel ordre
         return df[new_order]
+
 
 
     def delete_data_based_on_column(self, df, check_column, target_value, columns_to_clear):
@@ -180,7 +185,7 @@ class FileConfigController:
             download_folder = current_app.config['DOWNLOAD_FOLDER']
             file_configs = self.get_congif(file, upload_folder, extract)
             path_name = self.generate_unique_filename(os.path.join(download_folder, 'Import_du'))
-            file_mane = self.generate_unique_filename('Import','csv')
+            file_mane = self.generate_unique_filename('Import','csv', extract=extract)
             result = f"{path_name}/{file_mane}"
             output_path = os.path.join(download_folder, result)
             column = self.get_fiedls_odoo(extract)
@@ -202,7 +207,7 @@ class FileConfigController:
             # Vérifier l'extension du fichier
             if file_path.endswith('.csv'):
                 # Lire le fichier CSV
-                df = pd.read_csv(file_path, nrows=0)  # Charger uniquement les entêtes
+                df = pd.read_csv(file_path, nrows=0, sep=';')  # Charger uniquement les entêtes
             elif file_path.endswith('.xlsx'):
                 # Lire le fichier Excel
                 df = pd.read_excel(file_path, nrows=0)  # Charger uniquement les entêtes
