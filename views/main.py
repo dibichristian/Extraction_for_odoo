@@ -26,7 +26,7 @@ def form():
         if resultat['type'] == 'Erreur':
             return render_template('form.html', page="Nouvel import", erreur=resultat['Resultat'])
         else:
-            return browse_directory(message=resultat['Resultat'], path=resultat['Path'])
+            return browse_directory(message=resultat['Resultat'])
 
         
 @main_blueprint.route('/traiment/check', methods=['POST'])
