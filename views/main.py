@@ -14,14 +14,19 @@ def home():
 def form():
     if request.method == 'GET':
         return render_template('form.html', page="Nouvel import")
+    
     elif request.method == 'POST':
-        file_path = request.form.get('uploaded_file')
+        request_dict = {key: value for key, value in request.form.items()}
+
+        file_path = request_dict['uploaded_file']
+        
         if not file_path:
             return render_template('form.html', page="Nouvel import", erreur='Aucun fichier trouvé.')
-        request_dict = {key: value for key, value in request.form.items()}
-        file_config.cleaning_data(request_dict)
-        extract = request.form.get('extract')
-        resultat = file_config.transition(file_path, extract)
+        
+        
+
+        file_path = file_config.cleaning_data(request_dict)
+        resultat = file_config.transition(file_path, request_dict['extract'])
         
         if resultat['type'] == 'Erreur':
             return render_template('form.html', page="Nouvel import", erreur=resultat['Resultat'])

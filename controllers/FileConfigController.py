@@ -8,18 +8,6 @@ file_manager = FileManagerController()
 
 class FileConfigController:
     
-    def generate_unique_filename(self, base_path, extension=None, extract=None):
-        """Génère un nom de fichier unique pour éviter les conflits."""
-        if extension != None :
-            timestamp = datetime.now().strftime('%d_%m_%Y_%H%M%S')
-            name = f"{base_path}_{extract}_{timestamp}.{extension}"
-        else :
-            timestamp = datetime.now().strftime('%d_%m_%Y')
-            name = f"{base_path}_{timestamp}"
-            if not os.path.exists(name):
-                os.makedirs(name, exist_ok=True)
-        return name
-    
     def drop_columns(self, df, columns_to_drop):
         """Supprime les colonnes spécifiques d'un DataFrame."""
         df.columns = df.columns.str.strip()  # Nettoie les noms de colonnes
@@ -36,9 +24,9 @@ class FileConfigController:
         :param column_order: La liste des colonnes dans l'ordre souhaité.
         :return: Un DataFrame avec les colonnes réorganisées.
         """
-        # Ajouter un "-" après chaque 2 caractères dans la colonne "Date", si elle existe
+        # Convertion de la Colonne Date au format date de Odoo
         if "Date" in df.columns:
-            df["Date"] = df["Date"].astype(str).apply(lambda x: '-'.join([x[i:i+2] for i in range(0, len(x), 2)]))
+            df["Date"] = pd.to_datetime(df["Date"], format="%d%m%y").dt.strftime("%Y-%m-%d")
 
         # Garder uniquement les colonnes spécifiées dans column_order
         new_order = [col for col in column_order if col in df.columns]
@@ -132,7 +120,7 @@ class FileConfigController:
 
                     if comparison_file:
                         if comparison_file.endswith('.csv'):
-                            additional_data = pd.read_csv(comparison_file)
+                            additional_data = pd.read_csv(comparison_file, sep=';')
                         elif comparison_file.endswith('.xlsx'):
                             additional_data = pd.read_excel(comparison_file)
                         else:
@@ -142,15 +130,15 @@ class FileConfigController:
 
                         if additional_data is not None:
                             df = self.add_comparison_results(df, additional_data, column2, column1, column3, result_column)
-                
+
+                # Réorganiser les colonnes selon l'ordre souhaité
+                df = self.order_columns(df, column_order)
+
                 # Marquer les doublons
                 df = self.mark_duplicates(df, column_name="Référence", duplicate_col_name="Doublon")
 
                 # Supprimer les données dans les colonnes spécifiées si "Doublon" est "OUI"
                 df = self.delete_data_based_on_column(df, check_column="Doublon", target_value="OUI", columns_to_clear=entete)
-
-                # Réorganiser les colonnes selon l'ordre souhaité
-                df = self.order_columns(df, column_order)
 
                 # Renommer les colonnes selon le mappage fourni
                 df = self.rename_columns(df, column_mapping)
@@ -180,12 +168,20 @@ class FileConfigController:
             return { 'type' : 'Succes', 'Resultat' : success, 'Path': pathname}
     
     def transition(self, file, extract):
+        verif = self.verif_move(file, extract)
         
+        if verif['status'] == 'Succès':
             upload_folder = current_app.config['UPLOAD_FOLDER']
             download_folder = current_app.config['DOWNLOAD_FOLDER']
             file_configs = self.get_congif(file, upload_folder, extract)
-            path_name = self.generate_unique_filename(os.path.join(download_folder, 'Import_du'))
-            file_mane = self.generate_unique_filename('Import','csv', extract=extract)
+            path_name = file_manager.generate_unique_filename(os.path.join(download_folder, 'Import_du'))
+            if extract == 'Fni':
+                move = 'Fournisseur'
+            elif extract == 'Clt':
+                move = 'Client'
+            else:
+                move = 'Autres'
+            file_mane = file_manager.generate_unique_filename('Import','csv', extract=move)
             result = f"{path_name}/{file_mane}"
             output_path = os.path.join(download_folder, result)
             column = self.get_fiedls_odoo(extract)
@@ -194,6 +190,8 @@ class FileConfigController:
             column_order = column['Column']
             procees = self.process_import_files(file_configs, output_path, column_order, entete, column_mapping, path_name, file_mane)
             return procees
+        else:
+            return { 'type' : verif['status'], 'Resultat' : verif['message']}
     
     def get_headers(self, file_path):
         """
@@ -282,28 +280,37 @@ class FileConfigController:
     def cleaning_data(self, data):
         """
         Nettoie et renomme les colonnes d'un fichier CSV/XLSX selon les noms dans 'Column'.
+        La sortie est toujours un fichier CSV.
         """
         try:
             # Récupération des colonnes à traiter pour le type de mouvement
             odoo_field_info = self.get_fiedls_odoo(data['extract'])
             columns_to_process = odoo_field_info['Column']
 
-            # Lecture du fichier chargé
-            df = pd.read_excel(data['uploaded_file'])  # Ajusté pour un fichier XLSX
+            # Lecture du fichier chargé (CSV ou XLSX)
+            input_file = data['uploaded_file']
+            if input_file.endswith('.csv'):
+                df = pd.read_csv(input_file, sep=";")
+            elif input_file.endswith('.xlsx'):
+                df = pd.read_excel(input_file, engine='openpyxl')
+            else:
+                raise ValueError(f"Format de fichier non pris en charge : {input_file}")
 
             # Boucle pour renommer les colonnes spécifiées
             for column in columns_to_process:
                 if column in data:  # Vérifie si une nouvelle colonne est spécifiée dans les données
                     self.rename_column(df, data[column], column)
 
-            # Sauvegarder ou retourner le DataFrame nettoyé
-            output_path = data['uploaded_file']
-            df.to_excel(output_path, index=False)
-            print(f"Fichier nettoyé sauvegardé sous : {output_path}")
-            return df
+            # Déterminer le chemin de sortie pour le fichier CSV
+            output_file = input_file.rsplit('.', 1)[0] + '_cleaned.csv'
+            df.to_csv(output_file, index=False, encoding='utf-8')
+            print(f"Fichier nettoyé sauvegardé sous : {output_file}")
+            return output_file  # Retourne le chemin du fichier généré
 
         except Exception as e:
             print(f"Erreur lors du nettoyage des données : {e}")
+            return None
+
 
     def rename_column(self, df, old_name, new_name):
         """
@@ -313,6 +320,67 @@ class FileConfigController:
             df.rename(columns={old_name: new_name}, inplace=True)
         else:
             print(f"Colonne '{old_name}' introuvable dans le fichier.")
-        
-        
-        
+    
+    def verif_move(self, file, move):
+        """
+        Vérifie les données du fichier en fonction du type de mouvement (Client ou Fournisseur).
+        """
+        upload_folder = current_app.config['UPLOAD_FOLDER']
+
+        # Chargement du fichier principal
+        if file.endswith('.csv'):
+            df = pd.read_csv(file, sep=",")
+        elif file.endswith('.xlsx'):
+            df = pd.read_excel(file, engine='openpyxl')
+        else:
+            raise ValueError(f"Format de fichier non pris en charge : {file}")
+
+        print("Colonnes disponibles dans le DataFrame principal :", df.columns.tolist())
+
+        # Chargement du fichier partenaire
+        partner_file_path = os.path.join(upload_folder, "res_partner.csv")
+        partner = pd.read_csv(partner_file_path, sep=";")
+
+        # Configuration des colonnes selon le type de mouvement
+        if move == 'Clt':  
+            col2 = "Client"
+            col3 = "customer_rank"
+        else:
+            col2 = "Fournisseur"
+            col3 = "supplier_rank"
+
+        # Vérification de l'existence des colonnes
+        for col in [col2]:
+            if col not in df.columns:
+                raise KeyError(f"La colonne '{col}' est absente du fichier chargé.")
+
+        # Ajout des résultats de la comparaison
+        df = self.add_comparison_results(df, partner, col2, "ref", col3, 'Verif')
+
+        # Convertir la colonne 'Verif' en numérique
+        try:
+            df['Verif'] = pd.to_numeric(df['Verif'], errors='coerce')  # Convertit en NaN les valeurs non numériques
+        except Exception as e:
+            raise ValueError(f"Erreur lors de la conversion de la colonne 'Verif' : {e}")
+
+        # Filtrer uniquement les lignes avec des valeurs non nulles dans 'Verif'
+        valid_rows = df[df['Verif'].notnull()]
+
+        # Identifier les lignes invalides parmi les lignes non nulles : valeurs <= 0
+        invalid_rows = valid_rows[valid_rows['Verif'] <= 0]
+
+        # Si des lignes invalides existent, les retourner
+        if not invalid_rows.empty:
+            print("Lignes invalides détectées :", invalid_rows)
+            return {
+                "status": "Erreur",
+                "message": f"Les données de votre colonne {col2} ne correspondent pas aux données {col2} de la base de données Odoo",
+                "invalid_data": invalid_rows.to_dict(orient='records')  # Retourne les lignes invalides sous forme de dictionnaire
+            }
+
+        # Si tout est valide
+        return {
+            "status": "Succès",
+            "message": "Tous les enregistrements valides ont été vérifiés avec succès.",
+            "data": valid_rows.to_dict(orient='records')  # Retourne uniquement les lignes valides sous forme de dictionnaire
+        }
