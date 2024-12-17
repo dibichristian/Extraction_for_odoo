@@ -1,12 +1,13 @@
 {
-    "name": "Progistack",
-    "short_name": "Progistack",
-    "description": "Une application web pour gérer Progistack.",
+    "name": "Sage100 data to odoo import",
+    "short_name": "Sage100>Odoo",
+    "description": "Une application web pour convertir les données de Sage100 en fichiers importables dans Odoo.",
     "start_url": "/",
     "scope": "/",
     "display": "standalone",
     "background_color": "#ffffff",
     "theme_color": "#4CAF50",
+    "lang": "fr",
     "icons": [
         {
             "src": "assets/images/icon/icône-progistack-1.png",

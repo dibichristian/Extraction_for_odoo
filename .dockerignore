@@ -1,4 +1,4 @@
-__pycache__
+__pycache__/
 *.csv
 *.xlsx
 *.pyc
@@ -12,8 +12,8 @@ __pycache__
 .gitignore
 
 # Ignorer les données de test et fichiers temporaires
-tests/
 tmp/
+app/odoo/
 app/
 public/
 .vscode/
@@ -21,6 +21,4 @@ downloads/
 uploads/
 
 
-!requirements.txt
-!res_partner.xlsx
-!product_template.xlsx
+!static/requirements.txt

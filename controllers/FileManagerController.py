@@ -42,7 +42,8 @@ class FileManagerController:
                     file_size = os.path.getsize(item_path)
                     last_modified_time = os.path.getmtime(item_path)
                     last_modified_date = datetime.fromtimestamp(last_modified_time).strftime('%Y-%m-%d %H:%M:%S')
-                    files.append({'name': item, 'size': file_size, 'last_modified': last_modified_date})
+                    extention = os.path.splitext(item_path)
+                    files.append({'name': item, 'size': file_size, 'last_modified': last_modified_date, 'extension': extention[1]})
 
             return {"directories": directories, "files": files, "current_path": path}
         except Exception as e:

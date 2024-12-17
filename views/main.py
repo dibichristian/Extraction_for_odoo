@@ -7,10 +7,11 @@ file_manager = FileManagerController()
 file_config = FileConfigController()
 
 @main_blueprint.route('/')
+@main_blueprint.route('/home')
 def home():
     return render_template('index.html', page="Accueil")
 
-@main_blueprint.route('/traiment', methods=['POST','GET'])
+@main_blueprint.route('/processing', methods=['POST','GET'])
 def form():
     if request.method == 'GET':
         return render_template('form.html', page="Nouvel import")
@@ -34,7 +35,7 @@ def form():
             return browse_directory(message=resultat['Resultat'])
 
         
-@main_blueprint.route('/traiment/check', methods=['POST'])
+@main_blueprint.route('/processing/check', methods=['POST'])
 def check_form():
     file = request.files.get('file')
     if not file:
@@ -77,6 +78,13 @@ def download_file(filename):
     # Forward the download request to the controller.
     
     return file_manager.download_file(filename)
+
+@main_blueprint.route('/to_import/<path:filename>')
+def check_for_import(filename):
+    
+    resulta = file_config.for_import(filename)
+
+    return resulta
 
 @main_blueprint.route('/delete/<path:filename>', methods=['POST'])
 def delete_file(filename):

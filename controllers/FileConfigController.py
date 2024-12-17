@@ -1,4 +1,6 @@
 import os
+import csv
+import zipfile
 import pandas as pd
 from datetime import datetime
 from flask import current_app, send_from_directory
@@ -400,3 +402,133 @@ class FileConfigController:
             action = data_odoo.export_odoo_data(entity.replace("_", "."), 'id,display_name,default_code', file)
             
         return file
+
+
+    #Scinder pour import
+    import openpyxl
+    import csv
+
+    def get_column_index(sheet, column_name):
+        """Retourne l'index de la colonne basée sur le nom de la colonne."""
+        for col in sheet.iter_cols(1, sheet.max_column):
+            if col[0].value == column_name:
+                return col[0].column
+        raise ValueError(f"Colonne '{column_name}' non trouvée dans la feuille.")
+
+
+    def subdivide_csv_sheet(self, input_file, output_file_prefix, interval, required_columns):
+        """
+        Divise un fichier CSV en plusieurs sous-fichiers selon un intervalle de lignes.
+
+        :param input_file: Chemin du fichier CSV d'entrée.
+        :param output_file_prefix: Préfixe pour les fichiers de sortie.
+        :param interval: Intervalle de lignes pour chaque sous-fichier.
+        :param required_columns: Colonnes requises pour vérifier les lignes vides.
+        """
+        download_folder = current_app.config['DOWNLOAD_FOLDER']
+        # Charger le fichier CSV
+        with open(os.path.join(download_folder, input_file), mode='r', newline='', encoding='ISO-8859-1') as file:
+            reader = csv.reader(file, delimiter=',')
+            data = list(reader)
+
+        header = data[0]  # La première ligne est l'en-tête
+        required_column_indices = [header.index(col_name) for col_name in required_columns]
+
+        # Variables pour suivre les lignes et les fichiers
+        current_row = 1  # Commence après l'en-tête
+        file_counter = 1
+        output_files = []  # Liste pour stocker les fichiers créés
+
+        # Parcourir les lignes en blocs définis par l'intervalle
+        while current_row < len(data):
+            end_row = min(current_row + interval, len(data))
+
+            # Réduire l'intervalle tant que les cellules des colonnes définies sont vides
+            while end_row > current_row:
+                if all(data[end_row - 1][col_index] is not None and data[end_row - 1][col_index] != '' 
+                       for col_index in required_column_indices):
+                    end_row -= 1
+                    break
+                end_row -= 1
+
+            # Si end_row est inférieur à current_row, cela signifie qu'il n'a pas trouvé de ligne non vide
+            if end_row <= current_row:
+                end_row = current_row + interval
+
+            # Créer un nouveau fichier CSV pour chaque intervalle
+            output_file = f"{output_file_prefix}_{file_counter}.csv"
+            output_files.append(output_file)
+            with open(os.path.join(download_folder, output_file), mode='w', newline='', encoding='utf-8') as new_file:
+                writer = csv.writer(new_file, delimiter=',')
+
+                # Ajouter l'en-tête principal
+                writer.writerow(header)
+
+                # Copier les données de la plage sélectionnée
+                for row in data[current_row:end_row - 1]:
+                    writer.writerow(row)
+
+                # Copier la ligne de référence pour le prochain intervalle, si nécessaire
+                if end_row < len(data):
+                    next_row_data = data[end_row - 1]
+                    writer.writerow(next_row_data)
+
+            # Mettre à jour les compteurs pour le prochain intervalle
+            current_row = end_row
+            file_counter += 1
+        file_download = f"{output_file_prefix}_combined.zip"
+        # Appeler la fonction pour regrouper les fichiers en un fichier ZIP
+        self.combine_csv_files(output_files, file_download)
+
+        return file_manager.download_file(file_download)
+
+
+    def for_import(self, input_file):
+        """
+        Vérifie si le fichier contient plus de lignes que l'intervalle.
+        - Si oui : subdivise le fichier CSV.
+        - Sinon : lance le téléchargement du fichier.
+
+        :param input_file: Le chemin du fichier CSV à traiter.
+        """
+        download_folder = current_app.config['DOWNLOAD_FOLDER']
+        output_file = input_file.replace('.csv', '')  # Correction de "remplace" -> "replace"
+        interval = 5000
+        required_columns = ["partner_id/id"]
+
+        # Lire le fichier CSV pour compter les lignes
+        try:
+            df = pd.read_csv(os.path.join(download_folder, input_file))
+            total_rows = len(df)
+
+            # Vérifier si le nombre de lignes dépasse l'intervalle
+            if total_rows > interval:
+                print(f"Le fichier contient {total_rows} lignes, ce qui dépasse l'intervalle de {interval}.")
+                return self.subdivide_csv_sheet(input_file, output_file, interval, required_columns)
+            else:
+                print(f"Le fichier contient seulement {total_rows} lignes. Téléchargement en cours...")
+                return file_manager.download_file(input_file)
+        except Exception as e:
+            return f"Erreur lors de la lecture du fichier : {e}"
+
+    def combine_csv_files(self, file_list, zip_filename):
+        """
+        Combine une liste de fichiers CSV dans une archive ZIP.
+
+        :param file_list: Liste des fichiers CSV à regrouper.
+        :param zip_filename: Nom du fichier ZIP de sortie.
+        """
+        download_folder = current_app.config['DOWNLOAD_FOLDER']
+
+        print(f"Création du fichier ZIP : {zip_filename}")
+        with zipfile.ZipFile(os.path.join(download_folder, zip_filename), 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for file in file_list:
+                zipf.write(os.path.join(download_folder, file), os.path.basename(os.path.join(download_folder, file)))
+                print(f"Ajout du fichier : {file}")
+
+        # Optionnel : Supprimer les fichiers individuels après les avoir regroupés
+        for file in file_list:
+            os.remove(os.path.join(download_folder, file))
+            print(f"Suppression du fichier temporaire : {file}")
+
+        print(f"Le fichier ZIP {zip_filename} est prêt pour le téléchargement.")

@@ -11,9 +11,38 @@ import shutil
 
 class AppController:
 
+    def app_config(self, folder, GIT_REPO_URL="https://github.com/tfrancoi/odoo_csv_import.git"):
+
+        # Étape 2 : Cloner le projet depuis le dépôt distant
+        print("Clonage du dépôt distant...")
+        clone_command = ["git", "clone", GIT_REPO_URL, folder]
+        try:
+            subprocess.run(clone_command, check=True)
+            print("Dépôt cloné avec succès !")
+        except subprocess.CalledProcessError as e:
+            print(f"Erreur lors du clonage du dépôt : {e}")
+            return
+
+
+        # Installer les dépendances via requirements.txt
+        requirements_path = os.path.join(os.path.join(BASE_DIR, 'static'), 'requirements.txt')
+        if os.path.exists(requirements_path):
+            print("Installation des dépendances...")
+            install_command = ["pip", "install", "-r", requirements_path]
+            try:
+                subprocess.run(install_command, check=True)
+                print("Dépendances installées avec succès !")
+            except subprocess.CalledProcessError as e:
+                print(f"Erreur lors de l'installation des dépendances : {e}")
+        else:
+            print("Fichier requirements.txt introuvable dans le dépôt cloné.")
+
+
     def export_odoo_data(self, modele, colonne, fichier, domain='[]'):
 
         file_odoo_app = current_app.config['ODOO']
+        if not os.path.exists(os.path.join(file_odoo_app , 'odoo_export_thread.py')):
+            self.app_config(file_odoo_app)
         file_config = current_app.config['CONFIG']
 
         # Commande de base pour l'export
@@ -31,7 +60,7 @@ class AppController:
         ]
         
         # Répertoire d'exécution
-        execution_directory = os.path.join(file_odoo_app, 'odoo_csv_import')
+        execution_directory = os.path.join(file_odoo_app)
         # Exécution de la commande
         try:
             result = subprocess.run(base_command, shell=True, cwd=execution_directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=3600)
