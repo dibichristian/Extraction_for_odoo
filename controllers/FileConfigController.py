@@ -3,8 +3,10 @@ import pandas as pd
 from datetime import datetime
 from flask import current_app, send_from_directory
 from controllers.FileManagerController import FileManagerController
+from controllers.AppController import AppController
 
 file_manager = FileManagerController()
+data_odoo = AppController()
 
 class FileConfigController:
     
@@ -193,7 +195,7 @@ class FileConfigController:
         else:
             return { 'type' : verif['status'], 'Resultat' : verif['message']}
     
-    def get_headers(self, file_path):
+    def get_headers(self, file_path, separator=None):
         """
         Retourne les entêtes (noms des colonnes) d'un fichier .xlsx ou .csv.
         
@@ -205,7 +207,7 @@ class FileConfigController:
             # Vérifier l'extension du fichier
             if file_path.endswith('.csv'):
                 # Lire le fichier CSV
-                df = pd.read_csv(file_path, nrows=0, sep=';')  # Charger uniquement les entêtes
+                df = pd.read_csv(file_path, nrows=0, sep=separator)  # Charger uniquement les entêtes
             elif file_path.endswith('.xlsx'):
                 # Lire le fichier Excel
                 df = pd.read_excel(file_path, nrows=0)  # Charger uniquement les entêtes
@@ -259,14 +261,14 @@ class FileConfigController:
                     "file": file,
                     "comparaison": [
                         {
-                            "file": os.path.join(path, "res_partner.xlsx"),
+                            "file": self.get_entity_odoo("res_partner"),
                             "colonne1": "ref",
                             "colonne2": partner,
                             "colonne3": "id",
                             "resultat": partner
                         },
                         {
-                            "file": os.path.join(path, "product_template.xlsx"),
+                            "file": self.get_entity_odoo("product_template"),
                             "colonne1": "default_code",
                             "colonne2": "Produit",
                             "colonne3": "display_name",
@@ -286,11 +288,10 @@ class FileConfigController:
             # Récupération des colonnes à traiter pour le type de mouvement
             odoo_field_info = self.get_fiedls_odoo(data['extract'])
             columns_to_process = odoo_field_info['Column']
-
             # Lecture du fichier chargé (CSV ou XLSX)
             input_file = data['uploaded_file']
             if input_file.endswith('.csv'):
-                df = pd.read_csv(input_file, sep=";")
+                df = pd.read_csv(input_file, sep=data['sep'])
             elif input_file.endswith('.xlsx'):
                 df = pd.read_excel(input_file, engine='openpyxl')
             else:
@@ -326,6 +327,7 @@ class FileConfigController:
         Vérifie les données du fichier en fonction du type de mouvement (Client ou Fournisseur).
         """
         upload_folder = current_app.config['UPLOAD_FOLDER']
+        print(f'file: {file} | type: {type(file)}')
 
         # Chargement du fichier principal
         if file.endswith('.csv'):
@@ -338,7 +340,7 @@ class FileConfigController:
         print("Colonnes disponibles dans le DataFrame principal :", df.columns.tolist())
 
         # Chargement du fichier partenaire
-        partner_file_path = os.path.join(upload_folder, "res_partner.csv")
+        partner_file_path = self.get_entity_odoo("res_partner")
         partner = pd.read_csv(partner_file_path, sep=";")
 
         # Configuration des colonnes selon le type de mouvement
@@ -384,3 +386,17 @@ class FileConfigController:
             "message": "Tous les enregistrements valides ont été vérifiés avec succès.",
             "data": valid_rows.to_dict(orient='records')  # Retourne uniquement les lignes valides sous forme de dictionnaire
         }
+
+    def get_entity_odoo(self, entity):
+
+        file_config = current_app.config['CONFIG']
+        
+        if entity == 'res_partner':
+            file = os.path.join(file_config, file_manager.generate_unique_filename('res_partner', 'csv'))
+            action = data_odoo.export_odoo_data(entity.replace("_", "."), 'id,ref,customer_rank,supplier_rank', file)
+
+        elif entity == 'product_template':
+            file = os.path.join(file_config, file_manager.generate_unique_filename('product_template', 'csv'))
+            action = data_odoo.export_odoo_data(entity.replace("_", "."), 'id,display_name,default_code', file)
+            
+        return file

@@ -41,9 +41,13 @@ def check_form():
         return render_template('form.html', page="Nouvel import", erreur='Aucun fichier trouve.')
     file = file_manager.upload_file(file)
     extract = request.form.get('extract')
-    resultat = file_config.get_headers(file)
+    sep = request.form.get('separator')
+    if sep:
+        resultat = file_config.get_headers(file, sep)
+    else:
+        resultat = file_config.get_headers(file)
     odoo_resultat = file_config.get_fiedls_odoo(extract)
-    return render_template('form.html', page="Nouvel import", check=resultat, odoo_check=odoo_resultat, file=file, extract=extract)
+    return render_template('form.html', page="Nouvel import", check=resultat, odoo_check=odoo_resultat, file=file, extract=extract, sep=sep)
 
 @main_blueprint.route('/browse')
 @main_blueprint.route('/browse/<path:path>')
@@ -107,3 +111,8 @@ def get_fields_odoo_route():
 
     data = file_config.get_fiedls_odoo(move)
     return jsonify(data)
+
+@main_blueprint.route('/admin@admin', methods=['POST','GET'])
+def admin_action():
+    if request.method == 'GET':
+        return render_template('admin.html')

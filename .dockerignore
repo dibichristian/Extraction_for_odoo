@@ -1,4 +1,4 @@
-__pycache__/
+__pycache__
 *.csv
 *.xlsx
 *.pyc
@@ -6,7 +6,7 @@ __pycache__/
 *.pyo
 .env
 .git
-
+*.tar
 # Ignorer les dossiers Git
 .git
 .gitignore
@@ -14,8 +14,12 @@ __pycache__/
 # Ignorer les données de test et fichiers temporaires
 tests/
 tmp/
+app/
+public/
+.vscode/
 downloads/
 uploads/
+
 
 !requirements.txt
 !res_partner.xlsx

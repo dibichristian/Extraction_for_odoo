@@ -6,7 +6,8 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <title>{% block title %} {% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='assets/images/icon/icône-progistack.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='assets/images/icon/favicon.ico') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/bootstrap.min.css') }} ">
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/font-awesome.min.css') }} ">
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/themify-icons.css') }} ">
@@ -20,6 +21,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/default-css.css') }} ">
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/styles.css') }} ">
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/responsive.css') }} ">
+    <link rel="preload" href="{{ url_for('static', filename='assets/images/loading.gif') }}" as="image">
     <!-- modernizr css -->
     <script src="{{ url_for('static', filename='assets/js/vendor/modernizr-2.8.3.min.js') }} "></script>
 </head>

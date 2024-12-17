@@ -1,0 +1,36 @@
+{
+    "name": "Progistack",
+    "short_name": "Progistack",
+    "description": "Une application web pour gérer Progistack.",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#4CAF50",
+    "icons": [
+        {
+            "src": "assets/images/icon/icône-progistack-1.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "assets/images/icon/icône-progistack-2.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "assets/images/blog/post-thumb1.jpg",
+            "sizes": "600x404",
+            "type": "image/jpg",
+            "label": "Vue principale de l'application"
+        },
+        {
+            "src": "assets/images/blog/post-thumb1.jpg",
+            "sizes": "600x404",
+            "type": "image/jpg",
+            "label": "Vue secondaire"
+        }
+    ]
+}

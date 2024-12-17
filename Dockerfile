@@ -1,7 +1,6 @@
-# Étape 1 : Utiliser une image de base Python (choisissez une version adaptée à votre projet)
+# Étape 1 : Utiliser une image de base Python
 FROM python:3.11-slim
 
-ADD . /app/
 # Étape 2 : Définir le répertoire de travail à l'intérieur du conteneur
 WORKDIR /app
 
@@ -9,9 +8,9 @@ WORKDIR /app
 COPY requirements.txt /app/requirements.txt
 
 # Installer les dépendances Python
-RUN pip install  -r requirements.txt
+RUN pip install -r requirements.txt
 
-# Copier le reste des fichiers de l'application
+# Copier tout le contenu, sauf les éléments exclus dans .dockerignore
 COPY . /app
 
 # Étape 4 : Exposer le port pour l'application Flask

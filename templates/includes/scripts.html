@@ -1,34 +1,3 @@
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        document.getElementById("customRadio5").addEventListener("change", function () {
-            document.getElementById("domain-container").style.display = "block";
-        });
-        document.getElementById("customRadio4").addEventListener("change", function () {
-            document.getElementById("domain-container").style.display = "none";
-        });
-    });
-</script>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const line = document.getElementById('line');
-        const champ_entete = document.getElementById('champ-entete');
-
-        function toggleDomainField() {
-            // Vérifie que la valeur existe et est un nombre valide avant la comparaison
-            if (line.value && parseFloat(line.value) > 5000) {
-                champ_entete.style.display = 'block';
-            } else {
-                champ_entete.style.display = 'none';
-            }
-        }
-
-        // Attacher l'événement change
-        line.addEventListener('input', toggleDomainField);
-
-        // Initialiser l'affichage en fonction de la valeur actuelle
-        toggleDomainField();
-    });
-</script>
 
 {% if page =='Fichies d\'import' %}
 <script>
@@ -155,3 +124,105 @@
 
 </script>
 {% endif %}
+
+{% if page =='Nouvel import' %}
+
+<script>
+    // Fonction pour afficher l'animation
+    function showLoading() {
+        document.getElementById('loading-animation').style.display = 'flex';
+    }
+
+    // Attache l'événement au formulaire
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('valide'); // Remplacez par l'ID ou la classe de votre formulaire si nécessaire
+
+        if (form) {
+            form.addEventListener('submit', function () {
+                showLoading(); // Affiche l'animation GIF
+            });
+        }
+    });
+</script>
+
+
+
+
+<script>
+    const fileInput = document.getElementById('inputGroupFile01');
+    const separatorDiv = document.getElementById('separatorDiv');
+    const separatorSelect = document.getElementById('separator');
+    const errorMessage = document.getElementById('errorMessage');
+    const submit = document.getElementById('Analyse')
+
+    // Fonction pour lire une partie du fichier et vérifier le séparateur
+    function validateSeparator(file, separator) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+
+            // Lecture du fichier
+            reader.onload = function (event) {
+                const content = event.target.result; // Contenu du fichier
+                const lines = content.split('\n'); // Divise par lignes
+
+                // Vérifie s'il y a des lignes valides
+                if (lines.length > 0) {
+                    const columns = lines[0].split(separator); // Divise la première ligne avec le séparateur
+                    if (columns.length >= 3) { // Exemple : on attend au moins 2 colonnes
+                        resolve(true); // Le séparateur semble correct
+                    } else {
+                        resolve(false); // Le séparateur semble incorrect
+                    }
+                } else {
+                    resolve(false); // Pas de lignes valides dans le fichier
+                }
+            };
+
+            reader.onerror = function () {
+                reject("Erreur lors de la lecture du fichier.");
+            };
+
+            // Lecture d'une partie du fichier (par exemple, les premiers 1024 octets)
+            reader.readAsText(file, "UTF-8");
+        });
+    }
+
+    // Gestion de la sélection du fichier
+    fileInput.addEventListener('change', function () {
+        const file = fileInput.files[0];
+        if (file) {
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+
+            if (fileExtension === 'csv') {
+                separatorDiv.hidden = false;
+                separatorSelect.setAttribute('required', 'true');
+            } else {
+                separatorDiv.hidden = true;
+                separatorSelect.removeAttribute('required');
+                errorMessage.style.display = 'none';
+            }
+        }
+    });
+
+    // Gestion de la soumission du formulaire
+    separator.addEventListener('change', async function (event) {
+        const file = fileInput.files[0];
+        const separator = separatorSelect.value;
+
+        // Vérifie si un fichier CSV est sélectionné et si un séparateur est choisi
+        if (file && file.name.endsWith('.csv') && separator) {
+            const isValidSeparator = await validateSeparator(file, separator);
+
+            if (!isValidSeparator) {
+                event.preventDefault(); // Empêche la soumission du formulaire
+                errorMessage.style.display = 'block'; // Affiche un message d'erreur
+                submit.setAttribute('hidden', 'true')
+            } else {
+                errorMessage.style.display = 'none'; // Cache le message d'erreur
+                submit.removeAttribute('hidden')
+            }
+        }
+    });
+</script>
+{% endif %}
+
