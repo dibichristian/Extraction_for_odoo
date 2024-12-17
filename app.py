@@ -13,7 +13,7 @@ def create_app():
     # URL du dépôt distant
     GIT_REPO_URL = "https://github.com/tfrancoi/odoo_csv_import.git"
 
-    # Configure uploads and downloads directories
+    # Configure dossier directories
     app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'public', 'uploads')
     app.config['DOWNLOAD_FOLDER'] = os.path.join(BASE_DIR, 'public', 'downloads')
     app.config['TEMP'] = os.path.join(BASE_DIR, 'public', 'temp')
@@ -29,7 +29,7 @@ def create_app():
     odoo_folder = app.config['ODOO']
     
     # Étape 1 : Créer le dossier s'il n'existe pas
-    if not os.path.exists(odoo_folder):
+    if not os.path.exists(os.path.join(odoo_folder, 'odoo_export_thread.py')):
         print("Création du dossier ODOO...")
         os.makedirs(odoo_folder)
 

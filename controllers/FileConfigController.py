@@ -343,6 +343,13 @@ class FileConfigController:
 
         # Chargement du fichier partenaire
         partner_file_path = self.get_entity_odoo("res_partner")
+        if type(partner_file_path) != str:
+            print("Erreur lors de l'export : res_partner")
+            return {
+                "status": "Erreur",
+                "message": partner_file_path['message']
+            }
+
         partner = pd.read_csv(partner_file_path, sep=";")
 
         # Configuration des colonnes selon le type de mouvement
@@ -396,12 +403,14 @@ class FileConfigController:
         if entity == 'res_partner':
             file = os.path.join(file_config, file_manager.generate_unique_filename('res_partner', 'csv'))
             action = data_odoo.export_odoo_data(entity.replace("_", "."), 'id,ref,customer_rank,supplier_rank', file)
-
         elif entity == 'product_template':
             file = os.path.join(file_config, file_manager.generate_unique_filename('product_template', 'csv'))
             action = data_odoo.export_odoo_data(entity.replace("_", "."), 'id,display_name,default_code', file)
-            
-        return file
+        
+        if action['Status'] == 'Erreur':
+            return {'Status': 'Erreur', 'Message': action['Message']}
+        else:
+            return file
 
 
     #Scinder pour import
