@@ -18,16 +18,16 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t extracte_import_odoo:latest .
+          docker build -t extracte_import_odoo:1.0 .
 
       - name: Push to Docker Hub
         run: |
           echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-          docker tag extracte_import_odoo:latest christiandibi/extracte_import_odoo:latest
-          docker push christiandibi/extracte_import_odoo:latest
+          docker tag extracte_import_odoo:1.0 christiandibi/extracte_import_odoo:1.0
+          docker push christiandibi/extracte_import_odoo:1.0
 
       - name: Deploy Container
         run: |
           docker stop extracte_import_odoo || true
           docker rm extracte_import_odoo || true
-          docker run -d -p 5000:5000 --name extracte_import_odoo christiandibi/extracte_import_odoo:latest
+          docker run -d -p 5000:5000 --name extracte_import_odoo christiandibi/extracte_import_odoo:1.0

@@ -16,7 +16,6 @@ def create_app():
     # Configure dossier directories
     app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'public', 'uploads')
     app.config['DOWNLOAD_FOLDER'] = os.path.join(BASE_DIR, 'public', 'downloads')
-    app.config['TEMP'] = os.path.join(BASE_DIR, 'public', 'temp')
     app.config['CONFIG'] = os.path.join(BASE_DIR, 'public', 'config')
     app.config['ODOO'] = os.path.join(BASE_DIR, 'app', 'odoo')
 
@@ -24,7 +23,6 @@ def create_app():
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     os.makedirs(app.config['DOWNLOAD_FOLDER'], exist_ok=True)
     os.makedirs(app.config['CONFIG'], exist_ok=True)
-    os.makedirs(app.config['TEMP'], exist_ok=True)
 
     odoo_folder = app.config['ODOO']
     

@@ -36,7 +36,7 @@ class AppController:
         execution_directory = os.path.join(file_odoo_app)
         # Exécution de la commande
         try:
-            result = subprocess.run(base_command, shell=True, cwd=execution_directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=3600)
+            result = subprocess.run(base_command, cwd=execution_directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=3600)
 
             # Vérification des erreurs dans stderr
             if result.stderr.decode('utf-8', errors='replace'):
@@ -54,8 +54,8 @@ class AppController:
             error = "L'exportation a dépassé le délai imparti."
             return {'Status': 'Erreur', 'Message': error}
             
-
-    def connect_file_create(self, host='simam-recette-16885367.dev.odoo.com', base='simam-recette-16885367', login='admin', password='admin', port=443, uid=2):
+            
+    def connect_file_create(self, host='simam-recette-16885367.dev.odoo.com', base='simam-recette-16885367', login='Sage100versOdoo', password='odoo', port=443, uid=15):
         """
         Crée un fichier de configuration pour la connexion à Odoo.
         """
@@ -74,13 +74,12 @@ password = {password}
 protocol = jsonrpcs
 port = {port}
 uid = {uid}
-"""
-        try : 
-            with open(connect_file, "w", encoding="utf-8") as file:
-                file.write(file_content)
-        except Exception as e:
-            raise ValueError(f"Erreur lors de la  : {e}")
+""" 
+        if not os.path.exists(connect_file): 
+            try : 
+                with open(connect_file, "w", encoding="utf-8") as file:
+                    file.write(file_content)
+            except Exception as e:
+                raise ValueError(f"Erreur lors de la  : {e}")
 
         return connect_file
-
-        
