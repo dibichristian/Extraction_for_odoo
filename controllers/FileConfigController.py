@@ -56,9 +56,10 @@ class FileConfigController:
         df[duplicate_col_name] = df.duplicated(subset=[column_name], keep="first").apply(lambda x: yes_value if x else no_value)
         return df
 
+
     def add_comparison_results(self, df, additional_data, column2, column1, column3, result_column):
         """
-        Ajoute les résultats de la comparaison entre deux DataFrames.
+        Ajoute les résultats de la comparaison entre deux DataFrames et retourne une liste des éléments non trouvés.
         """
         additional_data.columns = additional_data.columns.str.strip()
         df.columns = df.columns.str.strip()
@@ -73,7 +74,13 @@ class FileConfigController:
 
         # Appliquer le dictionnaire de correspondance
         df[result_column] = df[column2].map(lookup_dict)
-        return df
+
+        # Identifier les éléments non trouvés
+        missing_elements = df[df[result_column].isna()][column2].unique()
+
+        # Retourner le DataFrame mis à jour et les éléments non trouvés
+        return df, missing_elements
+
 
     def rename_columns(self, df, column_mapping):
         """
@@ -133,7 +140,12 @@ class FileConfigController:
                             additional_data = None
 
                         if additional_data is not None:
-                            df = self.add_comparison_results(df, additional_data, column2, column1, column3, result_column)
+                            df, missing_elements = self.add_comparison_results(df, additional_data, column2, column1, column3, result_column)
+                            if len(missing_elements) > 0:
+                                return {
+                                    "type": "Erreur",
+                                    "Resultat": f"Les Produits suivants n'ont pas été trouvés, veuillez les mettre à jour dans Odoo :\n{missing_elements}",
+                                }
 
                 # Réorganiser les colonnes selon l'ordre souhaité
                 df = self.order_columns(df, column_order)
@@ -329,7 +341,6 @@ class FileConfigController:
         Vérifie les données du fichier en fonction du type de mouvement (Client ou Fournisseur).
         """
         upload_folder = current_app.config['UPLOAD_FOLDER']
-        print(f'file: {file} | type: {type(file)}')
 
         # Chargement du fichier principal
         if file.endswith('.csv'):
@@ -366,7 +377,7 @@ class FileConfigController:
                 raise KeyError(f"La colonne '{col}' est absente du fichier chargé.")
 
         # Ajout des résultats de la comparaison
-        df = self.add_comparison_results(df, partner, col2, "ref", col3, 'Verif')
+        df, missing_elements = self.add_comparison_results(df, partner, col2, "ref", col3, 'Verif')
 
         # Convertir la colonne 'Verif' en numérique
         try:
@@ -387,6 +398,11 @@ class FileConfigController:
                 "status": "Erreur",
                 "message": f"Les données de votre colonne {col2} ne correspondent pas aux données {col2} de la base de données Odoo",
                 "invalid_data": invalid_rows.to_dict(orient='records')  # Retourne les lignes invalides sous forme de dictionnaire
+            }
+        elif len(missing_elements) > 0:
+            return {
+                "status": "Erreur",
+                "message": f"Les Clients suivants n'ont pas été trouvés, veuillez les mettre à jour dans Odoo :\n{missing_elements}",
             }
 
         # Si tout est valide

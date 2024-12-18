@@ -7,7 +7,7 @@ class FileManagerController:
 
     def generate_unique_filename(self, base_path, extension=None, extract=None):
         """Génère un nom de fichier unique pour éviter les conflits."""
-        timestamps = datetime.now().strftime('%d_%m_%Y_%H%M%S')
+        timestamps = datetime.now().strftime('%d_%m_%Y_%H%M')
         timestamp = datetime.now().strftime('%d_%m_%Y')
         if extension:
             if extract:

@@ -12,47 +12,50 @@ import shutil
 class AppController:
 
     def export_odoo_data(self, modele, colonne, fichier, domain='[]'):
-
-        file_odoo_app = current_app.config['ODOO']
-        if not os.path.exists(os.path.join(file_odoo_app , 'odoo_export_thread.py')):
-            self.app_config(file_odoo_app)
-        file_config = current_app.config['CONFIG']
-
-        # Commande de base pour l'export
-        base_command = [
-            "python", "odoo_export_thread.py",
-            "-c", self.connect_file_create(),
-            f"--file={fichier}",
-            f"--model={modele}",
-            "--worker=2",
-            "--size=200",
-            f"--domain={domain}",
-            f'--field={colonne}',
-            '--sep=;',
-            "--encoding=utf-8-sig"
-        ]
         
-        # Répertoire d'exécution
-        execution_directory = os.path.join(file_odoo_app)
-        # Exécution de la commande
-        try:
-            result = subprocess.run(base_command, cwd=execution_directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=3600)
+        if not os.path.exists(fichier):
+            file_odoo_app = current_app.config['ODOO']
+            if not os.path.exists(os.path.join(file_odoo_app , 'odoo_export_thread.py')):
+                self.app_config(file_odoo_app)
+            file_config = current_app.config['CONFIG']
 
-            # Vérification des erreurs dans stderr
-            if result.stderr.decode('utf-8', errors='replace'):
-                error = f"Erreurs lors de l'exportation : {result.stderr.decode('utf-8', errors='replace')}"
-                print(error)
+            # Commande de base pour l'export
+            base_command = [
+                "python", "odoo_export_thread.py",
+                "-c", self.connect_file_create(),
+                f"--file={fichier}",
+                f"--model={modele}",
+                "--worker=2",
+                "--size=200",
+                f"--domain={domain}",
+                f'--field={colonne}',
+                '--sep=;',
+                "--encoding=utf-8-sig"
+            ]
+            
+            # Répertoire d'exécution
+            execution_directory = os.path.join(file_odoo_app)
+            # Exécution de la commande
+            try:
+                result = subprocess.run(base_command, cwd=execution_directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=3600)
+
+                # Vérification des erreurs dans stderr
+                if result.stderr.decode('utf-8', errors='replace'):
+                    error = f"Erreurs lors de l'exportation : {result.stderr.decode('utf-8', errors='replace')}"
+                    print(error)
+                    return {'Status': 'Erreur', 'Message': error}
+                else:
+                    print(f"Exportation terminée. Fichier créé : {fichier}")
+                    succes = f"Exportation terminée. Fichier créé : {fichier}"
+                    return {'Status': 'Succes', 'Message': succes}
+            
+            except subprocess.TimeoutExpired:
+                print("L'exportation a dépassé le délai imparti.")
+                error = "L'exportation a dépassé le délai imparti."
                 return {'Status': 'Erreur', 'Message': error}
-            else:
-                print(f"Exportation terminée. Fichier créé : {fichier}")
-                succes = f"Exportation terminée. Fichier créé : {fichier}"
-                print(succes)
-                return {'Status': 'Succes', 'Message': succes}
-        
-        except subprocess.TimeoutExpired:
-            print("L'exportation a dépassé le délai imparti.")
-            error = "L'exportation a dépassé le délai imparti."
-            return {'Status': 'Erreur', 'Message': error}
+        else:
+            print(f"Fichier exitant : {fichier}")
+            succes = f"Fichier exitant : {fichier}"
             
             
     def connect_file_create(self, host='simam-recette-16885367.dev.odoo.com', base='simam-recette-16885367', login='Sage100versOdoo', password='odoo', port=443, uid=15):
