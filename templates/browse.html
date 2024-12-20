@@ -1,92 +1,91 @@
 {% extends "layouts/base.html" %}
 
-{% block title %} Dossier  {% endblock %} 
+{% block title %} Dossier {% endblock %}
 
-{% block name_page1 %} Dossiers {% print(page) %} {% endblock %}
+{% block name_page1 %} Dossiers {% endblock %}
+{% block name_page2 %} Dossiers {% endblock %}
 
-{% block name_page2 %} Dossiers {% print(page) %} {% endblock %}
+{% block content %}
+<!-- Progress Table start -->
+<div class="col-12 mt-5">
+    <div class="card">
+        <div class="card-body">
+            <h4 class="header-title">Progress Table</h4>
+            {% if message %}
+            <p class="text-muted font-14 mb-4">{{ message }}</p>
+            {% endif %}
+            <div class="single-table">
+                <div class="table-responsive">
+                    <div class="d-flex justify-content-between mb-3">
+                        <!-- Sélecteur pour le nombre d'éléments par page -->
+                        <div>
+                            <label for="items-per-page">Éléments par page :</label>
+                            <select id="items-per-page" class="form-select">
+                                <option value="5">5</option>
+                                <option value="10" selected>10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                            </select>
+                        </div>
 
-{% block content %} 
-    <!-- Progress Table start -->
-    <div class="col-12 mt-5">
-        <div class="card">
-            <div class="card-body">
-                <h4 class="header-title">Progress Table</h4>
-                {%if message != None %}
-                <p class="text-muted font-14 mb-4">{% print(message ) %}</p>
-                {% endif %}
-                <div class="single-table">
-                    <div class="table-responsive">
-                        <table class="table table-hover progress-table text-center">
-                            <thead class="text-uppercase">
-                                <div class="d-flex justify-content-between mb-3">
-                                    <!-- Sélecteur pour le nombre d'éléments par page -->
-                                    <div>
-                                        <label for="items-per-page">Éléments par page :</label>
-                                        <select id="items-per-page">
-                                            <option value="5">5</option>
-                                            <option value="10" selected>10</option>
-                                            <option value="20">20</option>
-                                            <option value="50">50</option>
-                                        </select>
-                                    </div>
-                                
-                                    <!-- Barre de recherche -->
-                                    <div>
-                                        <input 
-                                            type="text" 
-                                            id="search-bar" 
-                                            placeholder="Rechercher..." 
-                                            class="form-control" 
-                                            style="width: 200px;"
-                                        />
-                                    </div>
-                                </div>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Nom <i class="fa fa-sort"></i></th>
-                                    <th>Taille <i class="fa fa-sort"></i></th>
-                                    <th>Dernière modification <i class="fa fa-sort"></i></th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="files-body">
-                                {% for i, directory in enumerate(directories, start=1) %}
-                                <tr>
-                                    <th scope="row">{{ i }}</th>
-                                    <td>{{ directory }}</td>
-                                    <td>—</td>
-                                    <td>—</td>
-                                    <td>
-                                        <a href="{{ url_for('main.browse_directory', path=current_path + '/' + directory) }}" class="text-primary">Ouvrir</a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                    
-                                {% for i, file in enumerate(files, start=1) %}
-                                <tr>
-                                    <th scope="row">{{ i }}</th>
-                                    <td>{{ file.name }}</td>
-                                    <td>{{ (file.size / 1024)|round(2) }} KB</td>
-                                    <td>{{ file.last_modified }}</td>
-                                    <td>
-                                        <a href="{{ url_for('main.download_file', filename=current_path + '/' + file.name) }}" class="btn btn-outline-primary">Télécharger</a>
-                                        {%if file.extension == '.csv' %}
-                                        <a href="{{ url_for('main.check_for_import', filename=current_path + '/' + file.name) }}" class="btn btn-outline-success">Importer</a>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}                              
-                            </tbody>
-                        </table>
-
-                            <!-- Pagination -->
-                            <ul id="pagination" class="pagination"></ul>
-
+                        <!-- Barre de recherche -->
+                        <div>
+                            <input type="text" id="search-bar" placeholder="Rechercher..." class="form-control"
+                                style="width: 200px;" />
+                        </div>
                     </div>
+
+                    <table class="table table-hover progress-table text-center">
+                        <thead class="text-uppercase">
+                            <tr>
+                                <th>#</th>
+                                <th>Nom <i class="fa fa-sort" data-sort="name"></i></th>
+                                <th>Taille <i class="fa fa-sort" data-sort="size"></i></th>
+                                <th>Dernière modification <i class="fa fa-sort" data-sort="last_modified"></i></th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="files-body">
+                            {% for i, directory in enumerate(directories, start=1) %}
+                            <tr>
+                                <th scope="row">{{ loop.index }}</th>
+                                <td>{{ directory }}</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>
+                                    <a href="{{ url_for('main.browse_directory', path=current_path + '/' + directory) }}"
+                                        class="text-primary">Ouvrir</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+
+                            {% for i, file in enumerate(files, start=1) %}
+                            <tr>
+                                <th scope="row">{{ loop.index + directories|length }}</th>
+                                <td>{{ file.name }}</td>
+                                <td>{{ (file.size / 1024)|round(2) }} KB</td>
+                                <td>{{ file.last_modified }}</td>
+                                <td>
+                                    <a href="{{ url_for('main.download_file', filename=current_path + '/' + file.name) }}"
+                                        class="btn btn-outline-primary">Télécharger</a>
+                                    {% if file.extension == '.csv' %}
+                                    <a href="{{ url_for('main.download_file_import', filename=current_path + '/' + file.name) }}"
+                                        class="btn btn-outline-success">Importer</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <!-- Pagination -->
+                    <ul id="pagination" class="pagination justify-content-center mt-3"></ul>
                 </div>
             </div>
         </div>
     </div>
-    <!-- Progress Table end -->
+</div>
+<!-- Progress Table end -->
+
+
 {% endblock %}

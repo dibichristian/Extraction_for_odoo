@@ -4,15 +4,15 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>404 Erreur</title>
+    <title>400 Interdit</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='assets/images/icon/favicon.ico')}}">
+    <link rel="shortcut icon" type="image/png" href="assets/images/icon/favicon.ico">
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/bootstrap.min.css')}}">
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/font-awesome.min.css')}}">
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/themify-icons.css')}}">
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/metisMenu.css')}}">
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/owl.carousel.min.css')}}">
-
+    <!-- amcharts css -->
     <!-- style css -->
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/typography.css')}}">
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/default-css.css')}}">
@@ -23,6 +23,10 @@
 </head>
 
 <body>
+    <!--[if lt IE 8]>
+            <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+        <![endif]-->
+    <!-- preloader area start -->
     <div id="preloader">
         <div class="loader"></div>
     </div>
@@ -31,9 +35,9 @@
     <div class="error-area ptb--100 text-center">
         <div class="container">
             <div class="error-content">
-                <h2>404</h2>
-                <p>Attention, page introuvable.</p>
-                <a href="{{url_for('main.home') }}">Retour à la page d'accueil</a>
+                <h2>400</h2>
+                <p>Mauvaise Requête</p>
+                <a href="index.html">Retour à la page d'accueil</a>
             </div>
         </div>
     </div>

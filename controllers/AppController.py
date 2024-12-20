@@ -1,25 +1,72 @@
-from flask import current_app, send_from_directory
-from datetime import datetime
-from tqdm import tqdm
-import openpyxl
-import csv
-import subprocess
 import os
-import time
 import logging
-import shutil
+import subprocess
+from flask import current_app
+from controllers.ToolController import ToolController
+
+tool = ToolController()
 
 class AppController:
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.INFO)
+
+    def initialize_directories(self):
+        """
+        Initialise les dossiers nécessaires à l'application (à appeler dans un contexte Flask).
+        """
+        if not current_app:
+            raise RuntimeError("Cette méthode doit être appelée dans le contexte d'une application Flask.")
+
+        # Récupérer les configurations
+        config_path = current_app.config.get('CONFIG', 'config')
+        odoo_path = current_app.config.get('ODOO', 'odoo')
+
+        # Créer les répertoires nécessaires
+        os.makedirs(config_path, exist_ok=True)
+        os.makedirs(odoo_path, exist_ok=True)
+
+        self.logger.info(f"Répertoires initialisés : CONFIG={config_path}, ODOO={odoo_path}")
+
+    def connect_file_create(self):
+        """
+        Crée un fichier de configuration pour la connexion à Odoo.
+        """
+        file_odoo_app = current_app.config['CONFIG']
+        connect_file = os.path.join(file_odoo_app, 'connection.conf')
+
+        if not os.path.exists(connect_file):
+            try:
+                file_content = f"""[Connection]
+hostname = {os.getenv('ODOO_HOST')}
+database = {os.getenv('ODOO_DATABASE')}
+login = {os.getenv('ODOO_LOGIN')}
+password = {os.getenv('ODOO_PASSWORD')}
+protocol = jsonrpcs
+port = {os.getenv('ODOO_PORT', 443)}
+uid = {os.getenv('ODOO_UID', 2)}
+"""
+                with open(connect_file, "w", encoding="utf-8") as file:
+                    file.write(file_content)
+                logging.info(f"Fichier de configuration créé: {connect_file}")
+            except Exception as e:
+                logging.error(f"Erreur lors de la création du fichier de configuration: {e}")
+                raise ValueError(f"Erreur lors de la création du fichier de configuration: {e}")
+
+        return connect_file
+
 
     def export_odoo_data(self, modele, colonne, fichier, domain='[]'):
-        
-        if not os.path.exists(fichier):
-            file_odoo_app = current_app.config['ODOO']
-            if not os.path.exists(os.path.join(file_odoo_app , 'odoo_export_thread.py')):
-                self.app_config(file_odoo_app)
-            file_config = current_app.config['CONFIG']
+        """
+        Exporter les données depuis Odoo vers un fichier CSV.
+        """
+        if not modele or not colonne or not fichier:
+            return tool.response_function(0, "Paramètres invalides", "Modele, colonne ou fichier manquant.")
 
-            # Commande de base pour l'export
+        if not os.path.exists(fichier):
+            self.initialize_directories()
+            
+            # Commande de base pour l'exportation
             base_command = [
                 "python", "odoo_export_thread.py",
                 "-c", self.connect_file_create(),
@@ -28,61 +75,35 @@ class AppController:
                 "--worker=2",
                 "--size=200",
                 f"--domain={domain}",
-                f'--field={colonne}',
-                '--sep=;',
+                f"--field={colonne}",
+                "--sep=;",
                 "--encoding=utf-8-sig"
             ]
-            
-            # Répertoire d'exécution
-            execution_directory = os.path.join(file_odoo_app)
-            # Exécution de la commande
+
+            execution_directory = current_app.config['ODOO']
+
             try:
-                result = subprocess.run(base_command, cwd=execution_directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=3600)
+                logging.info(f"Exécution de la commande: {' '.join(base_command)} dans {execution_directory}")
+                result = subprocess.run(
+                    base_command, cwd=execution_directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=3600
+                )
 
-                # Vérification des erreurs dans stderr
-                if result.stderr.decode('utf-8', errors='replace'):
-                    error = f"Erreurs lors de l'exportation : {result.stderr.decode('utf-8', errors='replace')}"
-                    print(error)
-                    return {'Status': 'Erreur', 'Message': error}
+                if result.returncode != 0:
+                    error_details = result.stderr.decode('utf-8', errors='replace')
+                    logging.error(f"Erreur lors de l'exportation: {error_details}")
+                    return tool.response_function(0, "Erreurs lors de l'exportation", error_details)
                 else:
-                    print(f"Exportation terminée. Fichier créé : {fichier}")
-                    succes = f"Exportation terminée. Fichier créé : {fichier}"
-                    return {'Status': 'Succes', 'Message': succes}
-            
+                    logging.info(f"Exportation terminée avec succès. Fichier créé: {fichier}")
+                    return tool.response_function(1, "Exportation terminée. Fichier créé", fichier)
+
             except subprocess.TimeoutExpired:
-                print("L'exportation a dépassé le délai imparti.")
-                error = "L'exportation a dépassé le délai imparti."
-                return {'Status': 'Erreur', 'Message': error}
-        else:
-            print(f"Fichier exitant : {fichier}")
-            succes = f"Fichier exitant : {fichier}"
-            
-            
-    def connect_file_create(self, host='simam-recette-16885367.dev.odoo.com', base='simam-recette-16885367', login='Sage100versOdoo', password='odoo', port=443, uid=15):
-        """
-        Crée un fichier de configuration pour la connexion à Odoo.
-        """
-        if not current_app:
-            raise RuntimeError("Cette méthode doit être appelée dans le contexte d'une application Flask.")
+                logging.error("L'exportation a dépassé le délai imparti.")
+                return tool.response_function(0, "L'exportation a dépassé le délai imparti.", 0)
 
-        file_odoo_app = current_app.config['CONFIG']
-        connect_file = os.path.join(file_odoo_app, 'connection.conf')
-        print(connect_file)
-
-        file_content = f"""[Connection]
-hostname = {host}
-database = {base}
-login = {login}
-password = {password}
-protocol = jsonrpcs
-port = {port}
-uid = {uid}
-""" 
-        if not os.path.exists(connect_file): 
-            try : 
-                with open(connect_file, "w", encoding="utf-8") as file:
-                    file.write(file_content)
             except Exception as e:
-                raise ValueError(f"Erreur lors de la  : {e}")
+                logging.exception("Une erreur imprévue est survenue.")
+                return tool.response_function(0, "Erreur imprévue", e)
 
-        return connect_file
+        else:
+            logging.info(f"Fichier existant: {fichier}")
+            return tool.response_function(1, "Fichier existant", fichier)
