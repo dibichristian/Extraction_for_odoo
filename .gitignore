@@ -4,7 +4,7 @@ __pycache__/
 *.pyc
 *.txt
 *.tar
-
+*.conf
 
 tests/
 tmp/

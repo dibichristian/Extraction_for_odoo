@@ -66,11 +66,11 @@
                                 <td>{{ (file.size / 1024)|round(2) }} KB</td>
                                 <td>{{ file.last_modified }}</td>
                                 <td>
-                                    <a href="{{ url_for('main.download_file', filename=current_path + '/' + file.name) }}"
-                                        class="btn btn-outline-primary">Télécharger</a>
-                                    {% if file.extension == '.csv' %}
                                     <a href="{{ url_for('main.download_file_import', filename=current_path + '/' + file.name) }}"
                                         class="btn btn-outline-success">Importer</a>
+                                    {% if file.extension == '.csv' %}
+                                    <a href="{{ url_for('main.download_file', filename=current_path + '/' + file.name) }}"
+                                        class="btn btn-outline-primary">Télécharger</a>
                                     {% endif %}
                                 </td>
                             </tr>

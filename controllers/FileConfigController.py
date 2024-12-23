@@ -150,7 +150,7 @@ class FileConfigController:
             action = data_odoo.export_odoo_data(entity.replace("_", "."), 'id,ref,customer_rank,supplier_rank', file)
         elif entity == 'product_template':
             file = os.path.join(file_config, file_manager.generate_unique_filename('product_template', 'csv'))
-            action = data_odoo.export_odoo_data(entity.replace("_", "."), 'id,display_name,default_code', file)
+            action = data_odoo.export_odoo_data(entity.replace("_", "."), 'id,display_name,old_default_code', file)
         
         if action['Type'] == 'Error':
             return tool.response_function(0, action['Message'], action['Response'])
@@ -238,7 +238,7 @@ class FileConfigController:
                         },
                         {
                             "file": self.get_entity_odoo("product_template")['Response'],
-                            "colonne1": "default_code",
+                            "colonne1": "old_default_code",
                             "colonne2": "Produit",
                             "colonne3": "display_name",
                             "resultat": "Produit"
@@ -449,8 +449,13 @@ class FileConfigController:
         La sortie est toujours un fichier CSV.
         """
         try:
+            input_file = data['uploaded_file']
             # Vérification des paramètres requis
-            required_keys = ['extract', 'uploaded_file', 'sep']
+            if input_file.endswith('.csv'):
+                required_keys = ['extract', 'uploaded_file', 'sep']
+            else:
+                required_keys = ['extract', 'uploaded_file']
+                
             for key in required_keys:
                 if key not in data:
                     raise ValueError(f"Clé manquante dans les données d'entrée : {key}")
@@ -462,7 +467,7 @@ class FileConfigController:
                 raise ValueError(f"Aucune colonne à traiter trouvée pour l'extract : {data['extract']}")
 
             # Lecture du fichier chargé (CSV ou XLSX)
-            input_file = data['uploaded_file']
+            
             if not os.path.exists(input_file):
                 raise FileNotFoundError(f"Le fichier spécifié n'existe pas : {input_file}")
 

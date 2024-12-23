@@ -17,9 +17,9 @@ class FileManagerController:
         timestamps = datetime.now().strftime('%d_%m_%Y_%H%M')
         timestamp = datetime.now().strftime('%d_%m_%Y')
         if extract:
-            filename = f"{base_name}_{extract}_{timestamp}"
+            filename = f"{base_name}_{extract}_{timestamps}"
         else:
-            filename = f"{base_name}_{timestamps}"
+            filename = f"{base_name}_{timestamp}"
 
         if extension:
             filename += f".{extension.lstrip('.')}"
