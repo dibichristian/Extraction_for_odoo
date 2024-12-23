@@ -77,10 +77,21 @@ class FileConfigController:
         # Appliquer le dictionnaire de correspondance
         df[result_column] = df[column2].map(lookup_dict)
 
-        # Identifier les éléments non trouvés
-        missing_elements = df[df[result_column].isna()][column2].unique()
+        # Créer un masque pour les lignes où result_column est NaN
+        nan_mask = df[result_column].isna()
 
-        # Retourner le DataFrame mis à jour et les éléments non trouvés
+        # Créer un masque pour les lignes qui ont au moins une valeur non-NaN dans les autres colonnes
+        other_columns = [col for col in df.columns if col != result_column]
+        has_other_values = df[other_columns].notna().any(axis=1)
+
+        # Identifier les éléments non trouvés (NaN dans result_column mais avec d'autres valeurs)
+        missing_elements = df[nan_mask & has_other_values][column2].unique()
+
+        # Filtrer les valeurs problématiques
+        missing_elements = [elem for elem in missing_elements 
+                        if elem not in ['nan', 'None', '', 'NaN'] 
+                        and not pd.isna(elem)]
+
         return df, missing_elements
 
     def rename_columns(self, df, column_mapping):
