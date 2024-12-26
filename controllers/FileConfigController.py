@@ -67,9 +67,9 @@ class FileConfigController:
         df.columns = df.columns.str.strip()
 
         # Supprimer les espaces dans les valeurs des colonnes concernées
-        additional_data[column1] = additional_data[column1].astype(str).str.strip()
-        additional_data[column3] = additional_data[column3].astype(str).str.strip()
-        df[column2] = df[column2].astype(str).str.strip()
+        additional_data[column1] = additional_data[column1].astype(str).str.strip().str.lower()
+        additional_data[column3] = additional_data[column3].astype(str).str.strip().str.lower()
+        df[column2] = df[column2].astype(str).str.strip().str.lower()
 
         # Créer un dictionnaire de correspondance à partir de additional_data
         lookup_dict = dict(zip(additional_data[column1], additional_data[column3]))
@@ -146,10 +146,10 @@ class FileConfigController:
         file_config = current_app.config['CONFIG']
         
         if entity == 'res_partner':
-            file = os.path.join(file_config, file_manager.generate_unique_filename('res_partner', 'csv'))
+            file = os.path.join(file_config, file_manager.generate_unique_filename('res_partner', 'csv', extract='du'))
             action = data_odoo.export_odoo_data(entity.replace("_", "."), 'id,ref,customer_rank,supplier_rank', file)
         elif entity == 'product_template':
-            file = os.path.join(file_config, file_manager.generate_unique_filename('product_template', 'csv'))
+            file = os.path.join(file_config, file_manager.generate_unique_filename('product_template', 'csv', extract='du'))
             action = data_odoo.export_odoo_data(entity.replace("_", "."), 'id,display_name,old_default_code', file)
         
         if action['Type'] == 'Error':
@@ -194,7 +194,7 @@ class FileConfigController:
                 'Column'  : ["Référence", "Date", "Client", "Produit", "Description", "Prix unitaire", "Quantité", "Remise"],
                 'Entete' : ["Référence", "Date", "Client"],
                 'Mapping' : {
-                    "Référence": "origine",
+                    "Référence": "origin",
                     "Date": "date_order",
                     "Client": "partner_id/id",
                     "Produit": "order_line/product_id",
@@ -250,80 +250,98 @@ class FileConfigController:
 
 
 
-
-
-
-
-
-
-    def verif_move(self, file, move):
+    def verif_data_presence(self, file1, col1, file2, col2):
         """
-        Vérifie les données du fichier en fonction du type de mouvement (Client ou Fournisseur).
+        Vérifie si les valeurs d'une colonne d'un fichier sont valides :
+        - Les valeurs de 'col1' dans le fichier 1 ne doivent pas être nulles.
+        - Les valeurs de 'col1' doivent exister dans 'col2' du fichier 2.
+        :param file1: Chemin vers le premier fichier (CSV ou Excel).
+        :param col1: Nom de la colonne dans le premier fichier.
+        :param file2: Chemin vers le second fichier (CSV ou Excel).
+        :param col2: Nom de la colonne dans le second fichier.
+        :return: Résultat avec les valeurs non valides et un statut.
         """
-        upload_folder = current_app.config['UPLOAD_FOLDER']
-
-        # Chargement du fichier principal
-        if file.endswith('.csv'):
-            df = pd.read_csv(file, sep=",")
-        elif file.endswith('.xlsx'):
-            df = pd.read_excel(file, engine='openpyxl')
+        # Chargement du premier fichier
+        if file1.endswith('.csv'):
+            df1 = pd.read_csv(file1, sep=",")
+        elif file1.endswith('.xlsx'):
+            df1 = pd.read_excel(file1, engine='openpyxl')
         else:
-            return tool.response_function(0, 'Format de fichier non pris en charge', file)
+            return tool.response_function(0, 'Format de fichier 1 non pris en charge', file1)
 
-        print("Colonnes disponibles dans le DataFrame principal :", df.columns.tolist())
-
-        # Chargement du fichier partenaire
-        partner_file_path = self.get_entity_odoo("res_partner")
-        if type(partner_file_path['Response']) != str:
-            print("Erreur lors de l'export : res_partner")
-            return tool.response_function(0, "Erreur lors de l'export des Contact", partner_file_path['Response'])
-        partner = pd.read_csv(partner_file_path['Response'], sep=";")
-
-        # Configuration des colonnes selon le type de mouvement
-        if move == 'Clt':  
-            col2 = "Client"
-            col3 = "customer_rank"
+        # Chargement du second fichier
+        if file2.endswith('.csv'):
+            df2 = pd.read_csv(file2, sep=";")
+        elif file2.endswith('.xlsx'):
+            df2 = pd.read_excel(file2, engine='openpyxl')
         else:
-            col2 = "Fournisseur"
-            col3 = "supplier_rank"
+            return tool.response_function(0, 'Format de fichier 2 non pris en charge', file2)
 
-        # Vérification de l'existence des colonnes
-        for col in [col2]:
-            if col not in df.columns:
-                raise tool.response_function(0, "La colonne suivante est absente du fichier chargé", col)
+        print("Colonnes disponibles dans le fichier 1 :", df1.columns.tolist())
+        print("Colonnes disponibles dans le fichier 2 :", df2.columns.tolist())
 
-        # Ajout des résultats de la comparaison
-        df, missing_elements = self.add_comparison_results(df, partner, col2, "ref", col3, 'Verif')
+        # Vérification de l'existence des colonnes dans les fichiers
+        missing_columns = []
+        if col1 not in df1.columns:
+            missing_columns.append(f"{col1} (fichier 1)")
+        if col2 not in df2.columns:
+            missing_columns.append(f"{col2} (fichier 2)")
+        if missing_columns:
+            return tool.response_function(
+                0,
+                f"Les colonnes suivantes sont absentes : {', '.join(missing_columns)}",
+                missing_columns
+            )
 
-        # Convertir la colonne 'Verif' en numérique
-        try:
-            df['Verif'] = pd.to_numeric(df['Verif'], errors='coerce')  # Convertit en NaN les valeurs non numériques
-        except Exception as e:
-            raise tool.response_function(0, "Erreur lors de la conversion de la colonne 'Verif'", e)
+        # Uniformisation des données
+        df1[col1] = df1[col1].dropna().astype(str).str.strip().str.lower()
+        df2[col2] = df2[col2].dropna().astype(str).str.strip().str.lower()
 
-        # Filtrer uniquement les lignes avec des valeurs non nulles dans 'Verif'
-        valid_rows = df[df['Verif'].notnull()]
+        # Vérification des valeurs nulles dans col1
+        null_values = df1[df1[col1].isnull()]
+        if not null_values.empty:
+            print("Valeurs nulles détectées dans la colonne du fichier 1 :", null_values)
+            return tool.response_function(
+                0,
+                f"Certaines lignes de '{col1}' dans le fichier 1 contiennent des valeurs nulles.",
+                null_values.to_dict(orient='records')
+            )
 
-        # Identifier les lignes invalides parmi les lignes non nulles : valeurs <= 0
-        invalid_rows = valid_rows[valid_rows['Verif'] <= 0]
+        # Recherche élément par élément dans col2
+        missing_values = set()  # Utiliser un ensemble pour éviter les doublons
+        for value in df1[col1]:
+            if value not in df2[col2].values:
+                missing_values.add(value)
 
-        # Si des lignes invalides existent, les retourner
-        if not invalid_rows.empty:
-            print("Lignes invalides détectées :", invalid_rows)
-            return tool.response_function(0, f"Les données de votre colonne {col2} ne correspondent pas aux données {col2} de la base de données Odoo",invalid_rows.to_dict(orient='records'))  # Retourne les lignes invalides sous forme de dictionnaire
-        elif len(missing_elements) > 0:
-            return tool.response_function(0, f"Les Clients suivants n'ont pas été trouvés, veuillez les mettre à jour dans Odoo", missing_elements)
+        # Vérification des valeurs manquantes
+        missing_values = list(missing_values)  # Convertir en liste pour le retour
+        if missing_values:  # Vérifie explicitement si la liste contient des éléments
+            print(f"Valeurs manquantes détectées : {missing_values}")
+            return tool.response_function(
+                0,
+                f"Les valeurs suivantes de '{col1}' ne sont pas présentes dans '{col2}' :",
+                missing_values
+            )
 
-        # Si tout est valide
-        return tool.response_function(1, "Tous les enregistrements valides ont été vérifiés avec succès.", valid_rows.to_dict(orient='records'))  # Retourne uniquement les lignes valides sous forme de dictionnaire
+        # Si toutes les valeurs de col1 sont valides et présentes dans col2
+        return tool.response_function(1, f"Toutes les valeurs de '{col1}' sont valides et présentes dans '{col2}'.", 200)
+
 
     def transition(self, file, extract):
-        verif = self.verif_move(file, extract)
+
+        file_configs = self.get_congif(file, extract)
+        for file in file_configs:
+            comparisons = file.get("comparaison", [])
+            for comparison in comparisons:
+                print(f"{comparison['resultat']} \n {extract}")
+                verif = self.verif_data_presence(file["file"], comparison["colonne2"], comparison['file'], comparison['colonne1'])
+                if verif['Type'] != 'Succes':
+                    break
+            
         
         if verif['Type'] == 'Succes':
             upload_folder = current_app.config['UPLOAD_FOLDER']
             download_folder = current_app.config['DOWNLOAD_FOLDER']
-            file_configs = self.get_congif(file, extract)
             path_name = file_manager.generate_unique_filename('Import_du')
             os.makedirs(os.path.join(download_folder, path_name), exist_ok=True)
 
@@ -347,7 +365,7 @@ class FileConfigController:
             
             procees = self.process_import_files(file_configs, output_path, column_order, entete, column_mapping, file_mane)
             return procees
-        else:
+        elif verif['Type'] != 'Succes':
             return tool.response_function(0, verif['Message'], verif['Response'])
 
     def process_import_files(self, file_configs, output_path, column_order, entete, column_mapping, filename):
@@ -403,7 +421,7 @@ class FileConfigController:
                             return tool.response_function(0, "Les Produits suivants n'ont pas été trouvés, veuillez les mettre à jour dans Odoo", missing_elements)
 
                 # Réorganiser les colonnes selon l'ordre souhaité
-                df = self.order_columns(df, column_order)
+                # df = self.order_columns(df, column_order)
 
                 # Marquer les doublons
                 df = self.mark_duplicates(df, column_name="Référence", duplicate_col_name="Doublon")
@@ -414,7 +432,7 @@ class FileConfigController:
                 df = self.drop_columns(df, ["Doublon"])
 
                 # Renommer les colonnes selon le mappage fourni
-                df = self.rename_columns(df, column_mapping)
+                # df = self.rename_columns(df, column_mapping)
 
                 # Ajouter le DataFrame traité à la liste
                 all_dataframes.append(df)
