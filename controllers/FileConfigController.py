@@ -421,7 +421,7 @@ class FileConfigController:
                             return tool.response_function(0, "Les Produits suivants n'ont pas été trouvés, veuillez les mettre à jour dans Odoo", missing_elements)
 
                 # Réorganiser les colonnes selon l'ordre souhaité
-                # df = self.order_columns(df, column_order)
+                df = self.order_columns(df, column_order)
 
                 # Marquer les doublons
                 df = self.mark_duplicates(df, column_name="Référence", duplicate_col_name="Doublon")
@@ -432,7 +432,7 @@ class FileConfigController:
                 df = self.drop_columns(df, ["Doublon"])
 
                 # Renommer les colonnes selon le mappage fourni
-                # df = self.rename_columns(df, column_mapping)
+                df = self.rename_columns(df, column_mapping)
 
                 # Ajouter le DataFrame traité à la liste
                 all_dataframes.append(df)
