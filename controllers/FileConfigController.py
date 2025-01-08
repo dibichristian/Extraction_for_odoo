@@ -68,7 +68,7 @@ class FileConfigController:
 
         # Supprimer les espaces dans les valeurs des colonnes concernées
         additional_data[column1] = additional_data[column1].astype(str).str.strip().str.lower()
-        additional_data[column3] = additional_data[column3].astype(str).str.strip().str.lower()
+        additional_data[column3] = additional_data[column3].astype(str).str.strip()
         df[column2] = df[column2].astype(str).str.strip().str.lower()
 
         # Créer un dictionnaire de correspondance à partir de additional_data
@@ -191,17 +191,18 @@ class FileConfigController:
     def get_fiedls_odoo(self, move):
         if move == 'Clt':
             return {
-                'Column'  : ["Référence", "Date", "Client", "Produit", "Description", "Prix unitaire", "Quantité", "Remise"],
+                'Column'  : ["Référence", "Date", "Client", "Produit", "Description", "Prix unitaire", "Quantité", "Remise","Analytique"],
                 'Entete' : ["Référence", "Date", "Client"],
                 'Mapping' : {
-                    "Référence": "origin",
+                    "Référence": "originr_ref",
                     "Date": "date_order",
                     "Client": "partner_id/id",
                     "Produit": "order_line/product_id",
                     "Description": "order_line/name",
                     "Prix unitaire": "order_line/price_unit",
                     "Quantité": "order_line/quantity",
-                    "Remise": "order_line/discount"
+                    "Remise": "order_line/discount",
+                    "Analytique":"order_line/analytic_line_ids"
                 }
             }
         elif move == 'Fni':
