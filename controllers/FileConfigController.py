@@ -1,5 +1,7 @@
+import ast
 import os
 import csv
+import re
 import zipfile
 import openpyxl
 import pandas as pd
@@ -185,8 +187,23 @@ class FileConfigController:
 
 
 
-
-
+    def analytic_account(self, df):
+        modele = 'account.analytic.account'
+        file = os.path.join(current_app.config['CONFIG'], file_manager.generate_unique_filename(modele.replace(".","_"), 'csv', extract='du'))
+        
+        analytic = data_odoo.export_odoo_data(modele, 'id.id,code', file)
+        anal = pd.read_csv(analytic['Response'], sep=";")
+        df, missing_elements = self.add_comparison_results(df, anal,  'Analytique', 'code', 'id.id', 'Analytique')
+        df['Analytique'] = df['Analytique'].apply(self.extract_number)
+        
+        return df
+        
+    def extract_number(self, cell):
+        if not pd.isna(cell):
+            cell_list = ast.literal_eval(cell) if isinstance(cell, str) else cell
+            cell_list = f'{{"{cell_list[1]}": 100.0}}'
+            return cell_list
+        return None
 
     def get_fiedls_odoo(self, move):
         if move == 'Clt':
@@ -202,7 +219,7 @@ class FileConfigController:
                     "Prix unitaire": "order_line/price_unit",
                     "Quantité": "order_line/quantity",
                     "Remise": "order_line/discount",
-                    "Analytique":"order_line/analytic_line_ids"
+                    "Analytique":"order_line/analytic_distribution"
                 }
             }
         elif move == 'Fni':
@@ -364,12 +381,12 @@ class FileConfigController:
             print(output_path)
             print(result)
             
-            procees = self.process_import_files(file_configs, output_path, column_order, entete, column_mapping, file_mane)
+            procees = self.process_import_files(file_configs, output_path, column_order, entete, column_mapping, file_mane, move)
             return procees
         elif verif['Type'] != 'Succes':
             return tool.response_function(0, verif['Message'], verif['Response'])
 
-    def process_import_files(self, file_configs, output_path, column_order, entete, column_mapping, filename):
+    def process_import_files(self, file_configs, output_path, column_order, entete, column_mapping, filename, move):
         """
         Traite un ou plusieurs fichiers Excel ou CSV, applique les transformations nécessaires,
         et exporte les résultats dans un seul fichier CSV.
@@ -420,6 +437,9 @@ class FileConfigController:
                         df, missing_elements = self.add_comparison_results(df, additional_data, column2, column1, column3, result_column)
                         if len(missing_elements) > 0:
                             return tool.response_function(0, "Les Produits suivants n'ont pas été trouvés, veuillez les mettre à jour dans Odoo", missing_elements)
+                        
+                if move == 'Client':
+                    df = self.analytic_account(df)
 
                 # Réorganiser les colonnes selon l'ordre souhaité
                 df = self.order_columns(df, column_order)
