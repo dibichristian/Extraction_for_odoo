@@ -237,33 +237,67 @@ class FileConfigController:
                     "Remise": "invoice_line_ids/discount"
                 }
             }
+        elif move == 'PETROCI':
+            return {
+                'Column' : ["Référence", "Code journal", "Date facture", "Date récéption", "Fournisseur", "Compte", "Libelle", "Montant", "Analytique"],
+                'Entete' : ["Référence", "Code journal", "Date facture", "Date récéption", "Fournisseur"],
+                'Mapping' : {
+                    "Référence": "ref",
+                    "Code journal":"journal_id",
+                    "Date facture": "invoice_date",
+                    "Date récéption": "date",
+                    "Fournisseur": "partner_id/id",
+                    "Compte": "invoice_line_ids/account_id",
+                    "Libelle": "invoice_line_ids/name",
+                    "Montant": "invoice_line_ids/price_unit",
+                    "Analytique": "invoice_line_ids/analytic_distribution"
+                }
+            }
             
     def get_congif(self, file, move):
+
         if move == 'Clt':  
             partner = "Client"
         else :
             partner = "Fournisseur"
-        file_configs = [
-                {
-                    "file": file,
-                    "comparaison": [
-                        {
-                            "file": self.get_entity_odoo("res_partner")['Response'],
-                            "colonne1": "ref",
-                            "colonne2": partner,
-                            "colonne3": "id",
-                            "resultat": partner
-                        },
-                        {
-                            "file": self.get_entity_odoo("product_template")['Response'],
-                            "colonne1": "old_default_code",
-                            "colonne2": "Produit",
-                            "colonne3": "display_name",
-                            "resultat": "Produit"
-                        }
-                    ]
-                }
-            ]
+
+        if move == 'PETROCI':
+            file_configs = [
+                    {
+                        "file": file,
+                        "comparaison": [
+                            {
+                                "file": self.get_entity_odoo("res_partner")['Response'],
+                                "colonne1": "ref",
+                                "colonne2": partner,
+                                "colonne3": "id",
+                                "resultat": partner
+                            }
+                        ]
+                    }
+                ]
+        else:
+            file_configs = [
+                    {
+                        "file": file,
+                        "comparaison": [
+                            {
+                                "file": self.get_entity_odoo("res_partner")['Response'],
+                                "colonne1": "ref",
+                                "colonne2": partner,
+                                "colonne3": "id",
+                                "resultat": partner
+                            },
+                            {
+                                "file": self.get_entity_odoo("product_template")['Response'],
+                                "colonne1": "old_default_code",
+                                "colonne2": "Produit",
+                                "colonne3": "display_name",
+                                "resultat": "Produit"
+                            }
+                        ]
+                    }
+                ]
         return file_configs
 
 
@@ -367,6 +401,8 @@ class FileConfigController:
                 move = 'Fournisseur'
             elif extract == 'Clt':
                 move = 'Client'
+            elif extract == 'PETROCI':
+                move = 'Petroci'
             else:
                 move = 'Autres'
 
@@ -438,7 +474,7 @@ class FileConfigController:
                         if len(missing_elements) > 0:
                             return tool.response_function(0, "Les Produits suivants n'ont pas été trouvés, veuillez les mettre à jour dans Odoo", missing_elements)
                         
-                if move == 'Client':
+                if move == 'Client' or move == 'Petroci':
                     df = self.analytic_account(df)
 
                 # Réorganiser les colonnes selon l'ordre souhaité

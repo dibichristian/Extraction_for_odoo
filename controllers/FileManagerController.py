@@ -131,7 +131,8 @@ class FileManagerController:
         avec plusieurs feuilles représentant chaque sous-intervalle.
         """
         download_folder = current_app.config['DOWNLOAD_FOLDER']
-        file_output = input_file.replace('.csv', '.xlsx')  
+        file_output = input_file.replace('.csv', '.xlsx')
+        files = input_file
         input_file = os.path.join(download_folder, input_file)
         try:
             # Charger le fichier CSV
@@ -139,6 +140,11 @@ class FileManagerController:
                 reader = csv.reader(file)
                 data = list(reader)
             
+            nombre_de_lignes_sans_entete = len(data) - 1
+
+            if nombre_de_lignes_sans_entete < interval:
+                return self.download_file(files)
+
             header = data[0]  # La première ligne est l'en-tête
             print(f"En-têtes détectées : {header}")
             required_column_indices = [header.index(col_name) for col_name in required_columns]
