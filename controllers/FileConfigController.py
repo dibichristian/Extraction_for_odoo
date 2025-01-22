@@ -211,15 +211,15 @@ class FileConfigController:
                 'Column'  : ["Référence", "Date", "Client", "Produit", "Description", "Prix unitaire", "Quantité", "Remise","Analytique"],
                 'Entete' : ["Référence", "Date", "Client"],
                 'Mapping' : {
-                    "Référence": "originr_ref",
-                    "Date": "date_order",
+                    "Référence": "Ref d'origine",
+                    "Date": "Date de facturation",
                     "Client": "partner_id/id",
-                    "Produit": "order_line/product_id",
-                    "Description": "order_line/name",
-                    "Prix unitaire": "order_line/price_unit",
-                    "Quantité": "order_line/quantity",
-                    "Remise": "order_line/discount",
-                    "Analytique":"order_line/analytic_distribution"
+                    "Produit": "Lignes de facture / Produit",
+                    "Description": "Lignes de facture / Libellé",
+                    "Prix unitaire": "Lignes de facture / Prix unitaire",
+                    "Quantité": "Lignes de facture / Quantité",
+                    "Remise": "Lignes de facture / Remise (%)",
+                    "Analytique":"Lignes de facture / Lignes analytiques"
                 }
             }
         elif move == 'Fni':
