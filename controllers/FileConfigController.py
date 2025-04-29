@@ -194,6 +194,8 @@ class FileConfigController:
         analytic = data_odoo.export_odoo_data(modele, 'id.id,code', file)
         anal = pd.read_csv(analytic['Response'], sep=";")
         df, missing_elements = self.add_comparison_results(df, anal,  'Analytique', 'code', 'id.id', 'Analytique')
+        if missing_elements:
+            return tool.response_function(0, "Les Analytique suivants n'ont pas été trouvés, veuillez les mettre à jour dans Odoo", missing_elements)
         df['Analytique'] = df['Analytique'].apply(self.extract_number)
         
         return df
@@ -208,8 +210,8 @@ class FileConfigController:
     def get_fiedls_odoo(self, move):
         if move == 'Clt':
             return {
-                'Column'  : ["Référence", "Date", "Client", "Produit", "Description", "Prix unitaire", "Quantité", "Remise","Analytique"],
-                'Entete' : ["Référence", "Date", "Client"],
+                'Column'  : ["Référence", "Date", "Journal", "Client", "Produit", "Description", "Prix unitaire", "Quantité", "Remise","Analytique"],
+                'Entete' : ["Référence", "Date", "Journal", "Client"],
                 'Mapping' : {
                     "Référence": "Ref d'origine",
                     "Date": "Date de facturation",
@@ -219,13 +221,14 @@ class FileConfigController:
                     "Prix unitaire": "Lignes de facture / Prix unitaire",
                     "Quantité": "Lignes de facture / Quantité",
                     "Remise": "Lignes de facture / Remise (%)",
-                    "Analytique":"Lignes de facture / Lignes analytiques"
+                    "Journal": "Journal",
+                    "Analytique":"order_line/analytic_distribution"
                 }
             }
         elif move == 'Fni':
             return {
-                'Column'  : ["Référence", "Date", "Fournisseur", "Produit", "Description", "Prix unitaire", "Quantité", "Remise"],
-                'Entete' : ["Référence", "Date", "Fournisseur"],
+                'Column'  : ["Référence", "Date", "Journal", "Fournisseur", "Produit", "Description", "Prix unitaire", "Quantité", "Remise"],
+                'Entete' : ["Référence", "Date", "Journal", "Fournisseur"],
                 'Mapping' : {
                     "Référence": "origine_ref",
                     "Date": "date",
@@ -234,6 +237,7 @@ class FileConfigController:
                     "Description": "invoice_line_ids/name",
                     "Prix unitaire": "invoice_line_ids/price_unit",
                     "Quantité": "invoice_line_ids/quantity",
+                    "Journal": "Journal",
                     "Remise": "invoice_line_ids/discount"
                 }
             }
@@ -477,8 +481,10 @@ class FileConfigController:
                 if move == 'Client' or move == 'Petroci':
                     df = self.analytic_account(df)
 
+
                 # Réorganiser les colonnes selon l'ordre souhaité
                 df = self.order_columns(df, column_order)
+
 
                 # Marquer les doublons
                 df = self.mark_duplicates(df, column_name="Référence", duplicate_col_name="Doublon")
@@ -558,11 +564,44 @@ class FileConfigController:
             for column in columns_to_process:
                 if column in data:  # Vérifie si une nouvelle colonne est spécifiée dans les données
                     rename[data[column]] = column
-
+             
+             
             if not rename:
                 raise ValueError("Aucune colonne à renommer n'a été spécifiée dans les données d'entrée.")
 
             self.rename_columns(df, rename)
+
+
+            # Conversion spécifique de la colonne date si elle est présente
+            # date_column = 'Date'
+
+            # if date_column in df.columns:
+            #     try:
+            #         # Nettoyage
+            #         df[date_column] = df[date_column].astype(str).str.strip().replace({'': None, 'nan': None, 'NaN': None})
+
+            #         # 1. Première tentative : parsing automatique (ex : 2025-10-03)
+            #         df[date_column] = pd.to_datetime(df[date_column], errors='coerce', dayfirst=False)
+
+            #         # 2. Récupérer les lignes non converties
+            #         mask_invalid = df[date_column].isna() & df[date_column].notna()
+            #         print(f"Lignes non converties : {df[mask_invalid]}")
+            #         # 3. Seconde tentative : format %d%m%y sur les valeurs restantes
+            #         # if mask_invalid.any():
+            #         #     original_values = df.loc[mask_invalid, date_column].astype(str).str.zfill(6)
+            #         #     retry_parsed = pd.to_datetime(original_values, format='%d%m%y', errors='coerce')
+            #         #     df.loc[mask_invalid, date_column] = retry_parsed
+
+            #         # 4. Mise en forme finale
+            #         df[date_column] = df[date_column].dt.strftime('%Y-%m-%d')
+
+                # except Exception as e:
+                #     print(f"Erreur lors de la conversion de la colonne {date_column} : {e}")
+
+
+
+
+
 
             # Déterminer le chemin de sortie pour le fichier CSV
             base_name, _ = os.path.splitext(input_file)
