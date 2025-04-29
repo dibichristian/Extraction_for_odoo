@@ -77,6 +77,16 @@
     });
 </script>
 
+<script>
+    document.getElementById('inputGroupFile01').addEventListener('change', function(e) {
+        const label = document.getElementById('fileLabel');
+        if (e.target.files.length > 0) {
+            label.textContent = "Fichier récupéré";
+        } else {
+            label.textContent = "Choisir le fichier...";
+        }
+    });
+</script>
 
 
 
