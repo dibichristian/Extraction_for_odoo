@@ -474,9 +474,6 @@ class FileConfigController:
                         if not empty_rows.empty:
                             print(f"Lignes avec des valeurs vides dans la colonne '{column2}':\n{empty_rows}")
                             return tool.response_function(0, f"La colonne '{column2}' contient des lignes vides. Veuillez corriger ces lignes avant de continuer.", empty_rows.to_dict(orient="records"))
-
-
-
                         df, missing_elements = self.add_comparison_results(df, additional_data, column2, column1, column3, result_column)
                         if len(missing_elements) > 0:
                             return tool.response_function(0, "Les Produits suivants n'ont pas été trouvés, veuillez les mettre à jour dans Odoo", missing_elements)
