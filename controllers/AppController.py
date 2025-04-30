@@ -6,6 +6,7 @@ from controllers.ToolController import ToolController
 
 tool = ToolController()
 
+
 class AppController:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
@@ -37,6 +38,7 @@ class AppController:
 
         if not os.path.exists(connect_file):
             try:
+                print("ODDO_HOST =", os.getenv("ODOO_HOST"))
                 file_content = f"""[Connection]
 hostname = {os.getenv('ODOO_HOST')}
 database = {os.getenv('ODOO_DATABASE')}

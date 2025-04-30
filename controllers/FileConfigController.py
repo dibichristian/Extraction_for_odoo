@@ -65,9 +65,9 @@ class FileConfigController:
         Ajoute les résultats de la comparaison entre deux DataFrames et retourne une liste des éléments non trouvés.
         Vérifie que les autres colonnes ne sont pas vides avant de considérer un élément comme manquant.
         """
+        
         additional_data.columns = additional_data.columns.str.strip()
         df.columns = df.columns.str.strip()
-
         # Supprimer les espaces dans les valeurs des colonnes concernées
         additional_data[column1] = additional_data[column1].astype(str).str.strip().str.lower()
         additional_data[column3] = additional_data[column3].astype(str).str.strip()
@@ -95,6 +95,7 @@ class FileConfigController:
                         and not pd.isna(elem)]
 
         return df, missing_elements
+
 
     def rename_columns(self, df, column_mapping):
         """
@@ -193,12 +194,14 @@ class FileConfigController:
         
         analytic = data_odoo.export_odoo_data(modele, 'id.id,code', file)
         anal = pd.read_csv(analytic['Response'], sep=";")
-        df, missing_elements = self.add_comparison_results(df, anal,  'Analytique', 'code', 'id.id', 'Analytique')
+                
+        df, missing_elements = self.add_comparison_results(df, anal, 'Analytique', 'code', 'id.id', 'Analytique_result')
         if missing_elements:
             return tool.response_function(0, "Les Analytique suivants n'ont pas été trouvés, veuillez les mettre à jour dans Odoo", missing_elements)
-        df['Analytique'] = df['Analytique'].apply(self.extract_number)
+        print(f"Missing elements: {missing_elements}")
+        df['Analytique'] = df['Analytique_result'].apply(self.extract_number)
         
-        return df
+        return tool.response_function(1, "Les Analytique", df)
         
     def extract_number(self, cell):
         if not pd.isna(cell):
@@ -480,22 +483,29 @@ class FileConfigController:
                         
                 if move == 'Client' or move == 'Petroci':
                     df = self.analytic_account(df)
+                    if df.get('Type') == 'Error':
+                        return tool.response_function(0, df['Message'], df['Response'])
+                    df = df['Response']
 
 
                 # Réorganiser les colonnes selon l'ordre souhaité
                 df = self.order_columns(df, column_order)
-
+                print(f"Colonnes réorganisées : {df.columns.tolist()}")
 
                 # Marquer les doublons
                 df = self.mark_duplicates(df, column_name="Référence", duplicate_col_name="Doublon")
+                print(f"Doublons marqués : {df['Doublon'].value_counts()}")
 
                 # Supprimer les données dans les colonnes spécifiées si "Doublon" est "OUI"
                 df = self.delete_data_based_on_column(df, check_column="Doublon", target_value="OUI", columns_to_clear=entete)
+                print(f"Données supprimées dans les colonnes : {entete}")
 
                 df = self.drop_columns(df, ["Doublon"])
+                print(f"Colonnes après suppression : {df.columns.tolist()}")
 
                 # Renommer les colonnes selon le mappage fourni
                 df = self.rename_columns(df, column_mapping)
+                print(f"Colonnes renommées : {df.columns.tolist()}")
 
                 # Ajouter le DataFrame traité à la liste
                 all_dataframes.append(df)

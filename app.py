@@ -6,7 +6,7 @@ from views.main import main_blueprint
 from controllers.helpers import upload_asset
 
 # Load environment variables
-load_dotenv()
+load_dotenv(override=True)
 
 def create_app():
     app = Flask(__name__)
